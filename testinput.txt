@@ -1,0 +1,84 @@
+# Kuhn
+# ====
+#
+# This game file was automatically generated on 07-18-2017
+# by the Kuhn game generator, part of the efg_lib project
+#
+# Copyright © 2017 Carnegie Mellon University. All Rights Reserved.
+#
+#
+# Command line invocation
+# -----------------------
+#
+# > kuhn.py 
+#
+
+node / chance actions JQ=1.000000 JK=1.000000 QJ=1.000000 QK=1.000000 KJ=1.000000 KQ=1.000000
+node /C:JQ player 1 actions c r
+node /C:JQ/P1:c/P2:r player 1 actions c f
+node /C:JQ/P1:c player 2 actions c r
+node /C:JQ/P1:r player 2 actions c f
+node /C:JQ/P1:c/P2:c leaf payoffs 1=-1.000000 2=1.000000
+node /C:JQ/P1:c/P2:r/P1:c leaf payoffs 1=-2.000000 2=2.000000
+node /C:JQ/P1:c/P2:r/P1:f leaf payoffs 1=-1.000000 2=1.000000
+node /C:JQ/P1:r/P2:c leaf payoffs 1=-2.000000 2=2.000000
+node /C:JQ/P1:r/P2:f leaf payoffs 1=1.000000 2=-1.000000
+node /C:JK player 1 actions c r
+node /C:JK/P1:c/P2:r player 1 actions c f
+node /C:JK/P1:c player 2 actions c r
+node /C:JK/P1:r player 2 actions c f
+node /C:JK/P1:c/P2:c leaf payoffs 1=-1.000000 2=1.000000
+node /C:JK/P1:c/P2:r/P1:c leaf payoffs 1=-2.000000 2=2.000000
+node /C:JK/P1:c/P2:r/P1:f leaf payoffs 1=-1.000000 2=1.000000
+node /C:JK/P1:r/P2:c leaf payoffs 1=-2.000000 2=2.000000
+node /C:JK/P1:r/P2:f leaf payoffs 1=1.000000 2=-1.000000
+node /C:QJ player 1 actions c r
+node /C:QJ/P1:c/P2:r player 1 actions c f
+node /C:QJ/P1:c player 2 actions c r
+node /C:QJ/P1:r player 2 actions c f
+node /C:QJ/P1:c/P2:c leaf payoffs 1=1.000000 2=-1.000000
+node /C:QJ/P1:c/P2:r/P1:c leaf payoffs 1=2.000000 2=-2.000000
+node /C:QJ/P1:c/P2:r/P1:f leaf payoffs 1=-1.000000 2=1.000000
+node /C:QJ/P1:r/P2:c leaf payoffs 1=2.000000 2=-2.000000
+node /C:QJ/P1:r/P2:f leaf payoffs 1=1.000000 2=-1.000000
+node /C:QK player 1 actions c r
+node /C:QK/P1:c/P2:r player 1 actions c f
+node /C:QK/P1:c player 2 actions c r
+node /C:QK/P1:r player 2 actions c f
+node /C:QK/P1:c/P2:c leaf payoffs 1=-1.000000 2=1.000000
+node /C:QK/P1:c/P2:r/P1:c leaf payoffs 1=-2.000000 2=2.000000
+node /C:QK/P1:c/P2:r/P1:f leaf payoffs 1=-1.000000 2=1.000000
+node /C:QK/P1:r/P2:c leaf payoffs 1=-2.000000 2=2.000000
+node /C:QK/P1:r/P2:f leaf payoffs 1=1.000000 2=-1.000000
+node /C:KJ player 1 actions c r
+node /C:KJ/P1:c/P2:r player 1 actions c f
+node /C:KJ/P1:c player 2 actions c r
+node /C:KJ/P1:r player 2 actions c f
+node /C:KJ/P1:c/P2:c leaf payoffs 1=1.000000 2=-1.000000
+node /C:KJ/P1:c/P2:r/P1:c leaf payoffs 1=2.000000 2=-2.000000
+node /C:KJ/P1:c/P2:r/P1:f leaf payoffs 1=-1.000000 2=1.000000
+node /C:KJ/P1:r/P2:c leaf payoffs 1=2.000000 2=-2.000000
+node /C:KJ/P1:r/P2:f leaf payoffs 1=1.000000 2=-1.000000
+node /C:KQ player 1 actions c r
+node /C:KQ/P1:c/P2:r player 1 actions c f
+node /C:KQ/P1:c player 2 actions c r
+node /C:KQ/P1:r player 2 actions c f
+node /C:KQ/P1:c/P2:c leaf payoffs 1=1.000000 2=-1.000000
+node /C:KQ/P1:c/P2:r/P1:c leaf payoffs 1=2.000000 2=-2.000000
+node /C:KQ/P1:c/P2:r/P1:f leaf payoffs 1=-1.000000 2=1.000000
+node /C:KQ/P1:r/P2:c leaf payoffs 1=2.000000 2=-2.000000
+node /C:KQ/P1:r/P2:f leaf payoffs 1=1.000000 2=-1.000000
+
+
+infoset /C:J? nodes /C:JQ /C:JK
+infoset /C:J?/P1:c/P2:r nodes /C:JQ/P1:c/P2:r /C:JK/P1:c/P2:r
+infoset /C:?J/P1:c nodes /C:QJ/P1:c /C:KJ/P1:c
+infoset /C:?J/P1:r nodes /C:QJ/P1:r /C:KJ/P1:r
+infoset /C:Q? nodes /C:QJ /C:QK
+infoset /C:Q?/P1:c/P2:r nodes /C:QJ/P1:c/P2:r /C:QK/P1:c/P2:r
+infoset /C:?Q/P1:c nodes /C:JQ/P1:c /C:KQ/P1:c
+infoset /C:?Q/P1:r nodes /C:JQ/P1:r /C:KQ/P1:r
+infoset /C:K? nodes /C:KJ /C:KQ
+infoset /C:K?/P1:c/P2:r nodes /C:KJ/P1:c/P2:r /C:KQ/P1:c/P2:r
+infoset /C:?K/P1:c nodes /C:JK/P1:c /C:QK/P1:c
+infoset /C:?K/P1:r nodes /C:JK/P1:r /C:QK/P1:r
