@@ -1,13 +1,13 @@
-// The Round Table
+// My game
 graph {
 	0 [label="0 Nature
  ['JQ=1.000000', 'JK=1.000000', 'QJ=1.000000', 'QK=1.000000', 'KJ=1.000000', 'KQ=1.000000']"]
 	Begin -- 0 [label=""]
-	1 [label="1 Player 1
+	1 [label="1 infoset:/C:J? Player 1
  /C:JK
  ['actions', 'c', 'r']"]
 	0 -- 1 [label="C:JK"]
-	2 [label="2 Player 2
+	2 [label="2 infoset:/C:?K/P1:c Player 2
  /C:JK/P1:c
  ['actions', 'c', 'r']"]
 	1 -- 2 [label="P1:c"]
@@ -15,7 +15,7 @@ graph {
  trace: /C:JK/P1:c/P2:c
  ['payoffs', '1=-1.000000', '2=1.000000']"]
 	2 -- 3 [label="P2:c"]
-	4 [label="4 Player 1
+	4 [label="4 infoset:/C:J?/P1:c/P2:r Player 1
  /C:JK/P1:c/P2:r
  ['actions', 'c', 'f']"]
 	2 -- 4 [label="P2:r"]
@@ -27,7 +27,7 @@ graph {
  trace: /C:JK/P1:c/P2:r/P1:f
  ['payoffs', '1=-1.000000', '2=1.000000']"]
 	4 -- 6 [label="P1:f"]
-	7 [label="7 Player 2
+	7 [label="7 infoset:/C:?K/P1:r Player 2
  /C:JK/P1:r
  ['actions', 'c', 'f']"]
 	1 -- 7 [label="P1:r"]
@@ -39,11 +39,11 @@ graph {
  trace: /C:JK/P1:r/P2:f
  ['payoffs', '1=1.000000', '2=-1.000000']"]
 	7 -- 9 [label="P2:f"]
-	10 [label="10 Player 1
+	10 [label="10 infoset:/C:J? Player 1
  /C:JQ
  ['actions', 'c', 'r']"]
 	0 -- 10 [label="C:JQ"]
-	11 [label="11 Player 2
+	11 [label="11 infoset:/C:?Q/P1:c Player 2
  /C:JQ/P1:c
  ['actions', 'c', 'r']"]
 	10 -- 11 [label="P1:c"]
@@ -51,7 +51,7 @@ graph {
  trace: /C:JQ/P1:c/P2:c
  ['payoffs', '1=-1.000000', '2=1.000000']"]
 	11 -- 12 [label="P2:c"]
-	13 [label="13 Player 1
+	13 [label="13 infoset:/C:J?/P1:c/P2:r Player 1
  /C:JQ/P1:c/P2:r
  ['actions', 'c', 'f']"]
 	11 -- 13 [label="P2:r"]
@@ -63,7 +63,7 @@ graph {
  trace: /C:JQ/P1:c/P2:r/P1:f
  ['payoffs', '1=-1.000000', '2=1.000000']"]
 	13 -- 15 [label="P1:f"]
-	16 [label="16 Player 2
+	16 [label="16 infoset:/C:?Q/P1:r Player 2
  /C:JQ/P1:r
  ['actions', 'c', 'f']"]
 	10 -- 16 [label="P1:r"]
@@ -75,11 +75,11 @@ graph {
  trace: /C:JQ/P1:r/P2:f
  ['payoffs', '1=1.000000', '2=-1.000000']"]
 	16 -- 18 [label="P2:f"]
-	19 [label="19 Player 1
+	19 [label="19 infoset:/C:K? Player 1
  /C:KJ
  ['actions', 'c', 'r']"]
 	0 -- 19 [label="C:KJ"]
-	20 [label="20 Player 2
+	20 [label="20 infoset:/C:?J/P1:c Player 2
  /C:KJ/P1:c
  ['actions', 'c', 'r']"]
 	19 -- 20 [label="P1:c"]
@@ -87,7 +87,7 @@ graph {
  trace: /C:KJ/P1:c/P2:c
  ['payoffs', '1=1.000000', '2=-1.000000']"]
 	20 -- 21 [label="P2:c"]
-	22 [label="22 Player 1
+	22 [label="22 infoset:/C:K?/P1:c/P2:r Player 1
  /C:KJ/P1:c/P2:r
  ['actions', 'c', 'f']"]
 	20 -- 22 [label="P2:r"]
@@ -99,7 +99,7 @@ graph {
  trace: /C:KJ/P1:c/P2:r/P1:f
  ['payoffs', '1=-1.000000', '2=1.000000']"]
 	22 -- 24 [label="P1:f"]
-	25 [label="25 Player 2
+	25 [label="25 infoset:/C:?J/P1:r Player 2
  /C:KJ/P1:r
  ['actions', 'c', 'f']"]
 	19 -- 25 [label="P1:r"]
@@ -111,11 +111,11 @@ graph {
  trace: /C:KJ/P1:r/P2:f
  ['payoffs', '1=1.000000', '2=-1.000000']"]
 	25 -- 27 [label="P2:f"]
-	28 [label="28 Player 1
+	28 [label="28 infoset:/C:K? Player 1
  /C:KQ
  ['actions', 'c', 'r']"]
 	0 -- 28 [label="C:KQ"]
-	29 [label="29 Player 2
+	29 [label="29 infoset:/C:?Q/P1:c Player 2
  /C:KQ/P1:c
  ['actions', 'c', 'r']"]
 	28 -- 29 [label="P1:c"]
@@ -123,7 +123,7 @@ graph {
  trace: /C:KQ/P1:c/P2:c
  ['payoffs', '1=1.000000', '2=-1.000000']"]
 	29 -- 30 [label="P2:c"]
-	31 [label="31 Player 1
+	31 [label="31 infoset:/C:K?/P1:c/P2:r Player 1
  /C:KQ/P1:c/P2:r
  ['actions', 'c', 'f']"]
 	29 -- 31 [label="P2:r"]
@@ -135,7 +135,7 @@ graph {
  trace: /C:KQ/P1:c/P2:r/P1:f
  ['payoffs', '1=-1.000000', '2=1.000000']"]
 	31 -- 33 [label="P1:f"]
-	34 [label="34 Player 2
+	34 [label="34 infoset:/C:?Q/P1:r Player 2
  /C:KQ/P1:r
  ['actions', 'c', 'f']"]
 	28 -- 34 [label="P1:r"]
@@ -147,11 +147,11 @@ graph {
  trace: /C:KQ/P1:r/P2:f
  ['payoffs', '1=1.000000', '2=-1.000000']"]
 	34 -- 36 [label="P2:f"]
-	37 [label="37 Player 1
+	37 [label="37 infoset:/C:Q? Player 1
  /C:QJ
  ['actions', 'c', 'r']"]
 	0 -- 37 [label="C:QJ"]
-	38 [label="38 Player 2
+	38 [label="38 infoset:/C:?J/P1:c Player 2
  /C:QJ/P1:c
  ['actions', 'c', 'r']"]
 	37 -- 38 [label="P1:c"]
@@ -159,7 +159,7 @@ graph {
  trace: /C:QJ/P1:c/P2:c
  ['payoffs', '1=1.000000', '2=-1.000000']"]
 	38 -- 39 [label="P2:c"]
-	40 [label="40 Player 1
+	40 [label="40 infoset:/C:Q?/P1:c/P2:r Player 1
  /C:QJ/P1:c/P2:r
  ['actions', 'c', 'f']"]
 	38 -- 40 [label="P2:r"]
@@ -171,7 +171,7 @@ graph {
  trace: /C:QJ/P1:c/P2:r/P1:f
  ['payoffs', '1=-1.000000', '2=1.000000']"]
 	40 -- 42 [label="P1:f"]
-	43 [label="43 Player 2
+	43 [label="43 infoset:/C:?J/P1:r Player 2
  /C:QJ/P1:r
  ['actions', 'c', 'f']"]
 	37 -- 43 [label="P1:r"]
@@ -183,11 +183,11 @@ graph {
  trace: /C:QJ/P1:r/P2:f
  ['payoffs', '1=1.000000', '2=-1.000000']"]
 	43 -- 45 [label="P2:f"]
-	46 [label="46 Player 1
+	46 [label="46 infoset:/C:Q? Player 1
  /C:QK
  ['actions', 'c', 'r']"]
 	0 -- 46 [label="C:QK"]
-	47 [label="47 Player 2
+	47 [label="47 infoset:/C:?K/P1:c Player 2
  /C:QK/P1:c
  ['actions', 'c', 'r']"]
 	46 -- 47 [label="P1:c"]
@@ -195,7 +195,7 @@ graph {
  trace: /C:QK/P1:c/P2:c
  ['payoffs', '1=-1.000000', '2=1.000000']"]
 	47 -- 48 [label="P2:c"]
-	49 [label="49 Player 1
+	49 [label="49 infoset:/C:Q?/P1:c/P2:r Player 1
  /C:QK/P1:c/P2:r
  ['actions', 'c', 'f']"]
 	47 -- 49 [label="P2:r"]
@@ -207,7 +207,7 @@ graph {
  trace: /C:QK/P1:c/P2:r/P1:f
  ['payoffs', '1=-1.000000', '2=1.000000']"]
 	49 -- 51 [label="P1:f"]
-	52 [label="52 Player 2
+	52 [label="52 infoset:/C:?K/P1:r Player 2
  /C:QK/P1:r
  ['actions', 'c', 'f']"]
 	46 -- 52 [label="P1:r"]
@@ -219,4 +219,16 @@ graph {
  trace: /C:QK/P1:r/P2:f
  ['payoffs', '1=1.000000', '2=-1.000000']"]
 	52 -- 54 [label="P2:f"]
+	1 -- 10 [color=red constraint=false fontcolor=red style=dashed xlabel="/C:J?"]
+	2 -- 47 [color=red constraint=false fontcolor=red style=dashed xlabel="/C:?K/P1:c"]
+	4 -- 13 [color=red constraint=false fontcolor=red style=dashed xlabel="/C:J?/P1:c/P2:r"]
+	7 -- 52 [color=red constraint=false fontcolor=red style=dashed xlabel="/C:?K/P1:r"]
+	11 -- 29 [color=red constraint=false fontcolor=red style=dashed xlabel="/C:?Q/P1:c"]
+	16 -- 34 [color=red constraint=false fontcolor=red style=dashed xlabel="/C:?Q/P1:r"]
+	19 -- 28 [color=red constraint=false fontcolor=red style=dashed xlabel="/C:K?"]
+	20 -- 38 [color=red constraint=false fontcolor=red style=dashed xlabel="/C:?J/P1:c"]
+	22 -- 31 [color=red constraint=false fontcolor=red style=dashed xlabel="/C:K?/P1:c/P2:r"]
+	25 -- 43 [color=red constraint=false fontcolor=red style=dashed xlabel="/C:?J/P1:r"]
+	37 -- 46 [color=red constraint=false fontcolor=red style=dashed xlabel="/C:Q?"]
+	40 -- 49 [color=red constraint=false fontcolor=red style=dashed xlabel="/C:Q?/P1:c/P2:r"]
 }
