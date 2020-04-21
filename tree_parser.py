@@ -33,6 +33,9 @@ class Tree:
         self.infoset=infoset
         self.action_infoset_label=""
         self.abstracted_infoset=""
+
+    def isTerminal(self):
+        return self.line[2]=="leaf"
     def build_dot(self,dot,father_id):
         #dot.node(self.node_id,self.node_id+" Player "+str(self.player_id))
         #player_id="Nature" if (self.line[2]=="chance") else ("Player "+self.line[3])
@@ -118,44 +121,15 @@ class Tree:
 
         return "A",out_vector#Placeholder per l'analisi strutturale
 
-
-def gen_infoset_clusters(infoset_of,fake_infosets,fake_id_of,children):
+def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vectors,children_infosets):
+    if(len(vectors)<2):
+        print("Skipping %s as lone vector"%vectors)
+        return
     global infoset_id
-    children_infosets=[]
-    print("----------Children is----------")
-    print(children)
-    print("------------------------------")
-    for child in children:
-        if(infoset_of[child.node_id] not in children_infosets):
-            children_infosets.append(infoset_of[child.node_id])
-
-    #print(children_infosets)
-
-    outcome_matrix={}
-    outcome_matrix["struttura_default"]=[]
-    for infoset in children_infosets:
-        vector=[]
-        for child in children:
-            if(infoset == infoset_of[child.node_id]):
-                _, cv =child.calculate_outcome_vector([])
-                vector=vector+cv
-
-        outcome_matrix["struttura_default"].append(vector)
-
-    #X = np.array([[1, 2], [2, 5], [3, 6],
-    #    [8, 7], [8, 8], [7, 3], [1, 2], [15, 15]])
-    #hundred = lambda t: t * 100
-    #outcome_matrix["struttura_default"][2]=[x*200000000 for x in outcome_matrix["struttura_default"][2]]
-    print(outcome_matrix["struttura_default"])
-    size=len(outcome_matrix["struttura_default"][0])
-    print("Size is %2d"% size)
-
-    for vector in outcome_matrix["struttura_default"]:
-        assert(len(vector)==size)
     #magic number 0.27
-    eps=0.6*size#TODO valore
-    clustering = KMeans(n_clusters=2).fit(outcome_matrix["struttura_default"])
-    print(clustering.labels_)
+    eps=0.6*len(vectors)#TODO valore
+    clustering = KMeans(n_clusters=2).fit(vectors)
+    print("Cluster targets: %s" %clustering.labels_)
 
     fake_info_store={}
     for index,obj in enumerate(clustering.labels_):
@@ -177,33 +151,110 @@ def gen_infoset_clusters(infoset_of,fake_infosets,fake_id_of,children):
 
 
     for child in children:
-        child.abstracted_infoset=child.infoset.abstracted_infoset
-        fake_id_of[child.node_id]=child.abstracted_infoset
-        fake_infosets[child.abstracted_infoset].append(child.node_id)
+        if(child.infoset.abstracted_infoset!=""):
+            child.abstracted_infoset=child.infoset.abstracted_infoset
+            fake_id_of[child.node_id]=child.abstracted_infoset
+            fake_infosets[child.abstracted_infoset].append(child.node_id)
     #print(fake_id_of)
     #print(fake_info_store)
     #print(fake_infosets)
-
-
-    #Ripeti per ogni gruppo di figli di ogni information set astratto o che non è stato astratto
-    unused_infosets=[infoset for infoset in children_infosets if infoset.abstracted_infoset==""]
-    abstracted_infosets=list(fake_info_store.values())
-    recur_infosets=unused_infosets +abstracted_infosets
-    children_store={ i : [] for i in recur_infosets }
-
+    print("Children infosets")
+    for children_infoset in children_infosets:
+        print(children_infoset.info_string)
+    print("Children")
     for child in children:
-        if(child.infoset.abstracted_infoset==""):
-            children_store[child.infoset]=children_store[child.infoset]+child.children
-        else:
-            children_store[child.infoset.abstracted_infoset]=children_store[child.infoset.abstracted_infoset]+child.children
+        print(child.line)
+    #Ripeti per ogni gruppo di figli di ogni information set astratto o che non è stato astratto
+    abstracted_infosets=list(fake_info_store.values())
+    unused_infosets=[infoset for infoset in children_infosets if infoset.abstracted_infoset==""]
+    recur_infosets=unused_infosets +abstracted_infosets
+    children_store={ i : {j:[] for j in actions} for i in recur_infosets }
+
+    #print(children_store)
+    print("Abstracted infosets")
+    for infoset in abstracted_infosets:
+        print(infoset)
+        print(infoset.info_string)
+    for child in children:
+        cinfoset=child.infoset
+
+        for action in actions:
+            grandsons=[grandson for grandson in child.children if not grandson.isTerminal() and grandson.action_label==action ]
+            if(cinfoset.abstracted_infoset==""):
+                children_store[cinfoset][action]=children_store[cinfoset][action]+grandsons
+            else:
+                if(not cinfoset.abstracted_infoset in abstracted_infosets):
+                    print(cinfoset in unused_infosets)
+                    print(cinfoset.info_string)
+                    print(cinfoset.abstracted_infoset.info_string)
+                    print(cinfoset.abstracted_infoset)
+                children_store[cinfoset.abstracted_infoset][action]=children_store[cinfoset.abstracted_infoset][action]+grandsons
 
     print("----------Children store is----------")
     print(children_store)
     print("----------------------------------")
-    for _,children_list in children_store.items():
-        #print(children_list)
+    for _,store in children_store.items():
         print()
-        #gen_infoset_clusters(infoset_of,fake_infosets,fake_id_of,children_list)
+        for _,children_list in store.items():
+            #print(children_list)
+            gen_infoset_clusters(actions,infoset_of,fake_infosets,fake_id_of,children_list)
+
+def gen_infoset_clusters(actions,infoset_of,fake_infosets,fake_id_of,children):
+    if(len(children)<2):
+        return
+    children_infosets=[]
+    print("----------Children is----------")
+    print(children)
+    print("------------------------------")
+    for child in children:
+        if(infoset_of[child.node_id] not in children_infosets):
+            children_infosets.append(infoset_of[child.node_id])
+
+    #print(children_infosets)
+    if(len(children_infosets)<2):
+        return
+
+    outcome_matrix={}
+    relevant_matrix={}
+    relevant_infosets_matrix={}
+    for infoset in children_infosets:
+        vector=[]
+        relevant_children=[]
+        for child in children:
+            if(infoset == infoset_of[child.node_id]):
+                _, cv =child.calculate_outcome_vector([])
+                vector=vector+cv
+                relevant_children.append(child)
+        if(len(vector) not in outcome_matrix):
+            outcome_matrix[len(vector)]=[]
+            relevant_matrix[len(vector)]=[]
+            relevant_infosets_matrix[len(vector)]=[]
+        outcome_matrix[len(vector)].append(vector)
+        relevant_matrix[len(vector)]+=(relevant_children)
+        relevant_infosets_matrix[len(vector)].append(infoset)
+
+    #X = np.array([[1, 2], [2, 5], [3, 6],
+    #    [8, 7], [8, 8], [7, 3], [1, 2], [15, 15]])
+    #hundred = lambda t: t * 100
+    #outcome_matrix["struttura_default"][2]=[x*200000000 for x in outcome_matrix["struttura_default"][2]]
+
+    for size,vectors in outcome_matrix.items():
+        print(vectors)
+        cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,relevant_matrix[size],vectors,relevant_infosets_matrix[size])
+
+    #size=len(outcome_matrix["struttura_default"][0])
+    #print("Size is %2d"% size)
+
+    # error=False
+    # for vector in outcome_matrix["struttura_default"]:
+    #     #assert(len(vector)==size)
+    #     if(len(vector)!=size):
+    #         error=True
+    #         break
+    # if(error):
+    #     print("__________AN Error has been found________")
+    #     print([child.line for child in children])
+    #     return
 
 
 def add_infoset_edges(dot,infosets,abstracted_infosets):
@@ -294,6 +345,7 @@ def read(filename):
 if __name__ == '__main__':
     (data_ordered, data_info) =read("testinput.txt")
 
+    actions=set(["P1:c","P1:r","P1:f","P2:c","P2:r","P2:f"])
 
     infoset_of={}
     for infoset in data_info:
@@ -334,8 +386,14 @@ if __name__ == '__main__':
 
     fake_infosets={}
     fake_id_of={}
-    gen_infoset_clusters(infoset_id_of,fake_infosets,fake_id_of,tree.children)
+    gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,tree.children)
 
-    add_infoset_edges(dot,infosets,fake_infosets)
+    display="abstract"
+    if(display=="true"):
+        add_infoset_edges(dot,infosets,{})
+    elif(display=="abstract"):
+        add_infoset_edges(dot,{},fake_infosets)
+    else:
+        add_infoset_edges(dot,infosets,fake_infosets)
 
     dot.render('test-output/round-table.gv', view=False)
