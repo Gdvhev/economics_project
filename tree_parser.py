@@ -1,24 +1,29 @@
 import csv
 from graphviz import *
 import numpy as np
-
+from sklearn.cluster import *
 infoset_id=1
-def gen_infoset(dict,player,string):
+def gen_infoset(dict,player):
     global infoset_id
     i=0
     id=str(infoset_id)
     infoset_id+=1
-    if(len(player)>0):
-        while(player+"."+str(i) in dict):
-            i=i+1
-        return Infoset(player+"."+str(i),id)
-    else:
-        return Infoset(string,id)
+    while(player+"."+str(i) in dict):
+        i=i+1
+    return Infoset(player+"."+str(i),id)
+
+def calc_utility(tree_node):
+    if(tree_node.line[2]!="leaf"):
+        return 0
+    utility=float(str(tree_node.line[4]).split("=")[1])
+    return utility
 
 class Infoset:
     def __init__(self, info_string, id):
         self.info_string=info_string
         self.id=id
+        self.abstracted_infoset=""
+
 class Tree:
     def __init__(self, node_id,children,line,action_label,infoset):
         self.children=children
@@ -26,6 +31,8 @@ class Tree:
         self.line=line
         self.action_label=action_label
         self.infoset=infoset
+        self.action_infoset_label=""
+        self.abstracted_infoset=""
     def build_dot(self,dot,father_id):
         #dot.node(self.node_id,self.node_id+" Player "+str(self.player_id))
         #player_id="Nature" if (self.line[2]=="chance") else ("Player "+self.line[3])
@@ -39,12 +46,9 @@ class Tree:
             label=label+" infoset:"+self.infoset.info_string+" "+self.infoset.id+ " "+player_id+"\n "+self.line[1]+"\n "+str(self.line[4:])
         #dot.node(self.node_id,self.node_id+" "+player_id+str(self.line))
         dot.node(self.node_id,label)
-        dot.edge(father_id, self.node_id,label=self.action_label)
+        dot.edge(father_id, self.node_id,label=(self.action_label+self.action_infoset_label))
         for child in self.children:
             child.build_dot(dot,self.node_id)
-
-    def set_infoset(self,new_infoset):
-        self.infoset=infoset
 
     def fill_infoset_dictionary(self,dict,father_infoset):
         player_id="P"
@@ -54,7 +58,7 @@ class Tree:
             else:
                 player_id="N"
             if(self.infoset=="NaN"):
-                self.infoset=gen_infoset(dict,player_id,"")
+                self.infoset=gen_infoset(dict,player_id)
                 dict[self.infoset]=[self.node_id]
             elif(self.infoset in dict):
                 dict[self.infoset].append(self.node_id)
@@ -67,13 +71,15 @@ class Tree:
         if(father_infoset=="NaN"):
             print(self.line)
 
-        self.action_label=self.action_label+str(father_infoset.id)
+        self.action_label=self.action_label
+        self.action_infoset_label=str(father_infoset.id)
 
     def fill_sequence_form(self,seq_dic,player_history,probability,natureson,father_player):
-
         if(not natureson):
             old=player_history[father_player]
+
             player_history[father_player]=player_history[father_player]+ self.action_label
+
         if(self.line[2]!="chance" and self.line[2]!="leaf"):
             #Player node
             player_id=self.line[3]
@@ -93,19 +99,126 @@ class Tree:
         else:
             num_c=len(self.children)
             probs=self.line[4:]
-            for i in range(0,len(self.children)-1):
+            for i in range(0,len(self.children)):
                 my_probability=probability * float(probs[i].split("=")[1])
                 self.children[i].fill_sequence_form(seq_dic,player_history,my_probability/num_c,True,"N")
 
         if(not natureson):
             player_history[father_player]=old
 
-def add_infoset_edges(dot,infosets):
+
+    def calculate_outcome_vector(self,out_vector):
+        if(self.line[2]== "leaf"):
+            out_vector.append(calc_utility(self))
+
+        else:
+            for child in self.children:
+                child.calculate_outcome_vector(out_vector)
+
+
+        return "A",out_vector#Placeholder per l'analisi strutturale
+
+
+def gen_infoset_clusters(infoset_of,fake_infosets,fake_id_of,children):
+    global infoset_id
+    children_infosets=[]
+    print("----------Children is----------")
+    print(children)
+    print("------------------------------")
+    for child in children:
+        if(infoset_of[child.node_id] not in children_infosets):
+            children_infosets.append(infoset_of[child.node_id])
+
+    #print(children_infosets)
+
+    outcome_matrix={}
+    outcome_matrix["struttura_default"]=[]
+    for infoset in children_infosets:
+        vector=[]
+        for child in children:
+            if(infoset == infoset_of[child.node_id]):
+                _, cv =child.calculate_outcome_vector([])
+                vector=vector+cv
+
+        outcome_matrix["struttura_default"].append(vector)
+
+    #X = np.array([[1, 2], [2, 5], [3, 6],
+    #    [8, 7], [8, 8], [7, 3], [1, 2], [15, 15]])
+    #hundred = lambda t: t * 100
+    #outcome_matrix["struttura_default"][2]=[x*200000000 for x in outcome_matrix["struttura_default"][2]]
+    print(outcome_matrix["struttura_default"])
+    size=len(outcome_matrix["struttura_default"][0])
+    print("Size is %2d"% size)
+
+    for vector in outcome_matrix["struttura_default"]:
+        assert(len(vector)==size)
+    #magic number 0.27
+    eps=0.6*size#TODO valore
+    clustering = KMeans(n_clusters=2).fit(outcome_matrix["struttura_default"])
+    print(clustering.labels_)
+
+    fake_info_store={}
+    for index,obj in enumerate(clustering.labels_):
+        if(obj=="-1"):
+            print("Outliers not supported ffs")
+            print(1/0)
+
+        if(not obj in fake_info_store):
+            fake_infoset=Infoset("",str(infoset_id))
+            infoset_id=infoset_id+1
+            fake_info_store[obj]=fake_infoset
+            fake_infosets[fake_infoset]=[]
+
+        else:
+            fake_infoset=fake_info_store[obj]
+
+        children_infosets[index].abstracted_infoset=fake_infoset
+        fake_infoset.info_string=fake_infoset.info_string+"+"+children_infosets[index].info_string
+
+
+    for child in children:
+        child.abstracted_infoset=child.infoset.abstracted_infoset
+        fake_id_of[child.node_id]=child.abstracted_infoset
+        fake_infosets[child.abstracted_infoset].append(child.node_id)
+    #print(fake_id_of)
+    #print(fake_info_store)
+    #print(fake_infosets)
+
+
+    #Ripeti per ogni gruppo di figli di ogni information set astratto o che non è stato astratto
+    unused_infosets=[infoset for infoset in children_infosets if infoset.abstracted_infoset==""]
+    abstracted_infosets=list(fake_info_store.values())
+    recur_infosets=unused_infosets +abstracted_infosets
+    children_store={ i : [] for i in recur_infosets }
+
+    for child in children:
+        if(child.infoset.abstracted_infoset==""):
+            children_store[child.infoset]=children_store[child.infoset]+child.children
+        else:
+            children_store[child.infoset.abstracted_infoset]=children_store[child.infoset.abstracted_infoset]+child.children
+
+    print("----------Children store is----------")
+    print(children_store)
+    print("----------------------------------")
+    for _,children_list in children_store.items():
+        #print(children_list)
+        print()
+        #gen_infoset_clusters(infoset_of,fake_infosets,fake_id_of,children_list)
+
+
+def add_infoset_edges(dot,infosets,abstracted_infosets):
     for infoset,nodes in infosets.items():
         if(len(nodes)>1):
             prev=nodes[0]
             for node in nodes[1:]:
                 dot.edge(prev, node,xlabel=infoset.info_string, style="dashed",color="red",constraint="false",fontcolor="red")
+                prev=node
+
+    for abs_infoset,nodes in abstracted_infosets.items():
+        if(len(nodes)>1):
+            prev=nodes[0]
+            for node in nodes[1:]:
+                dot.edge(prev, node,xlabel=abs_infoset.info_string, style="dashed",color="blue",constraint="false",fontcolor="blue")
                 prev=node
 
 def build_tree(data_ordered,infoset_of):
@@ -115,11 +228,9 @@ def build_tree(data_ordered,infoset_of):
     return Tree("0",children,data_ordered[0],"",Infoset("Nature",0))
 
 def build_subtree(infoset_of,data, actions,id):
-    #print("ACTIONS")
     children_action=list(set([x[0] for x in actions]))
     children_action=sorted(children_action)
     #print(actions)
-    #print("CIAO")
     #print(children_action)
     new_id=id+1
     children=[]
@@ -155,6 +266,16 @@ def build_subtree(infoset_of,data, actions,id):
 
     #     data_new=[x for (index, x) in enumerate(data) if actions[index][0]=action)]
     return children,id
+
+
+def generate_id_infoset_of(infosets):
+    infoset_id_of={}
+    for infoset,nodes in infosets.items():
+        for id in nodes:
+            infoset_id_of[id]=infoset
+
+    return infoset_id_of
+
 def read(filename):
     reader = csv.reader(open(filename), delimiter=" ")
     data = list(reader)
@@ -171,13 +292,8 @@ def read(filename):
     return data_ordered,data_info
 
 if __name__ == '__main__':
-    (data_ordered, data_info) =read("testinput2.txt")
+    (data_ordered, data_info) =read("testinput.txt")
 
-    # list_of_nodes=[x[3:]for x in data_info]
-    # list_of_infosets=[x[1]for x in data_info]
-    # info_zip=zip(list_of_infosets,list_of_nodes)
-    # infoset_input=dict(info_zip)
-    # print(infoset_input)
 
     infoset_of={}
     for infoset in data_info:
@@ -185,23 +301,41 @@ if __name__ == '__main__':
         infoset_id+=1
         for node in infoset[3:]:
             infoset_of[node]=infoset[0]
-    #print(infoset_of)
+    #A questo punto infoset_of contiene le reference agli infoset di tutti e soli i nodi con infoset da infoset_input
 
-
+    #Questo genera l'albero e assegna degli information set ai nodi per cui ancora manca(quelli che sono singoli)
     tree=build_tree(data_ordered,infoset_of)
 
+
+    #Costruisce un dizionario che per ogni Infoset ritorna la lista di id di nodi
     infosets={}
     tree.fill_infoset_dictionary(infosets,Infoset("0","0"))
 
     dot = Graph(comment='My game')
     tree.build_dot(dot,"Begin");
-    add_infoset_edges(dot,infosets)
 
-    dot.render('test-output/round-table.gv', view=False)
 
     sequence_table={}
-    tree.fill_sequence_form(sequence_table,{"1":"","2":""},1.0,True,"N")
-    for sequence_1,cells in sequence_table.items():
-        print(sequence_1)
-        print(cells)
-        print("")
+    tree.fill_sequence_form(sequence_table,{"1":"","2":""},1.0,True,"-")
+    # for sequence_1,cells in sequence_table.items():
+    #     print(sequence_1)
+    #     print(cells)
+    #     print("")
+
+    #Costruisce una struttura come infoset_of, ma che invece delle stringhe di sequenza ha gli id di nodo
+    infoset_id_of=generate_id_infoset_of(infosets)
+
+    #A questo punto:
+    #infoset_id_of contiene un dizionario che, dato un id di nodo, restituisce un oggetto Infoset
+    #infosets contiene un dizionario che, dato un oggetto Infoset, restituisce una lista di id di nodi
+    #infoset_of contiene un dizionario che, data una stringa di sequenza di gioco, restituisce un infoset
+    #esempio '/C:JQ/P1:c/P2:r': <__main__.Infoset (...)>
+
+
+    fake_infosets={}
+    fake_id_of={}
+    gen_infoset_clusters(infoset_id_of,fake_infosets,fake_id_of,tree.children)
+
+    add_infoset_edges(dot,infosets,fake_infosets)
+
+    dot.render('test-output/round-table.gv', view=False)
