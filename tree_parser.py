@@ -85,9 +85,10 @@ class Tree:
         for child in self.children:
             child.build_dot(dot,self.node_id,level+1)
 
-    def fill_infoset_dictionary(self,dict,father_infoset):
+    def fill_infoset_dictionary(self,dict,id_dic,father_infoset):
         """ Riempie il dizionario degli infoset"""
         player_id="P"
+        id_dic[self.node_id]=self
         if(not self.isTerminal()):#Terminali non hanno information set
             if(not self.isNature()):
                 player_id=self.line[3]
@@ -105,7 +106,7 @@ class Tree:
 
         #Ripeti
         for child in self.children:
-            child.fill_infoset_dictionary(dict,self.infoset)
+            child.fill_infoset_dictionary(dict,id_dic,self.infoset)
 
         #Nessuno dovrebbe avere questo
         if(father_infoset=="NaN"):
@@ -434,9 +435,9 @@ def read(filename):
 
     return data_ordered,data_info
 
-if __name__ == '__main__':
+def parse_and_abstract(filename):
     start_time = time.time()
-    (data_ordered, data_info) =read("testinput2.txt")
+    (data_ordered, data_info) =read(filename)
 
     #Actions conterrà tutte le azione mai incontrate
     actions=set()
@@ -454,7 +455,8 @@ if __name__ == '__main__':
 
     #Costruisce un dizionario che per ogni Infoset ritorna la lista di id di nodi
     infosets={}
-    tree.fill_infoset_dictionary(infosets,Infoset("0","0"))
+    id_dic={}
+    tree.fill_infoset_dictionary(infosets,id_dic,Infoset("0","0"))
 
     #Inizializza il grafico, svg è l'unico che permette di usare gli input grandi
     dot = Graph(comment='My game',format='svg')
@@ -515,3 +517,7 @@ if __name__ == '__main__':
 
     dot.render('test-output/round-table.gv', view=False)
     print("--- %s seconds ---" % (time.time() - start_time))
+    return tree,id_dic,infosets,infoset_of,infoset_id_of,fake_infosets,fake_id_of
+
+if __name__ == '__main__':
+    parse_and_abstract("testinput.txt")
