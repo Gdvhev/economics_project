@@ -1,9 +1,9 @@
 import numpy as np
 
 # Number of actions a player can take at a decision node.
-_N_ACTIONS_STANDARD = 2
+_N_ACTIONS_STANDARD = 2 
 _N_ACTIONS_RAISE = 3
-_N_CARDS = 3
+_N_CARDS = 5 #we have 5 types of cards in leduc 5 (9, T. J, Q, K)
 
 def main():
 
@@ -16,17 +16,17 @@ def main():
         expected_game_value += cfr(i_map)
         for _, v in i_map.items():
             v.next_strategy()
-
+            
     expected_game_value /= n_iterations
-
     display_results(expected_game_value, i_map)
+    
 
-#CFR algorithm
+#CFR Algorithm
 def cfr(i_map, history="", card_1=-1, card_2=-1, pr_1=1, pr_2=1, pr_c=1, card_N=-1):
-
+    
     if is_chance_node(history):
         if len(history) == 0:
-            return chance_util_first(i_map,history)
+            return chance_util_first(i_map, history)
         else:
             return chance_util_second(i_map, history, card_1, card_2)
 
@@ -50,7 +50,7 @@ def cfr(i_map, history="", card_1=-1, card_2=-1, pr_1=1, pr_2=1, pr_c=1, card_N=
     action_utils_standard = np.zeros(_N_ACTIONS_STANDARD)
     action_utils_raise = np.zeros(_N_ACTIONS_RAISE)
 
-    #RAISE CASE: RAISE, CALL AND FOLD  AVAILABLE
+    #Raise case: raise. call and fold are available
     if (history.endswith("r")  and not history.endswith("rr")):
         for i, action in enumerate(["r", "c", "f"]):
             next_history = history + action
@@ -70,7 +70,7 @@ def cfr(i_map, history="", card_1=-1, card_2=-1, pr_1=1, pr_2=1, pr_c=1, card_N=
         return util
             
     
-     #STANDARD CASE: ONLY FOLD AND CALL AVAILABLE
+    #Standard case 1: only call and fold are available
     if history.endswith("rr"):
         for i, action in enumerate(["f", "c"]):
             next_history = history + action
@@ -89,7 +89,7 @@ def cfr(i_map, history="", card_1=-1, card_2=-1, pr_1=1, pr_2=1, pr_c=1, card_N=
 
         return util
     
-    #STANDARD CASE: ONLY RAISE AND CALL AVAILABLE
+    #Standard case 2: only raise and call are available
     else:
         for i, action in enumerate(["r", "c"]):
             next_history = history + action
@@ -107,47 +107,39 @@ def cfr(i_map, history="", card_1=-1, card_2=-1, pr_1=1, pr_2=1, pr_c=1, card_N=
             info_set.regret_sum += pr_1 * pr_c * regrets
 
         return util
-
+    
+#To check if we are in a chance node
 def is_chance_node(history):
-
     return history == "" or history == "nncc" or history =="nnrc" or history == "nncrc" or history == "nncrrc" or history == "nnrrc"
 
 def chance_util_first(i_map,history):
-    if history == "":
-        expected_value = 0
-        n_possibilities = 9
-        for i in range(_N_CARDS):
-            for j in range(_N_CARDS):
-                expected_value += cfr(i_map, "nn", i, j, 
-                                      1, 1, 1/n_possibilities)
-
-        return expected_value/n_possibilities
-   
-    
-    
+    expected_value = 0
+    n_possibilities = 25
+    for i in range(_N_CARDS):
+        for j in range(_N_CARDS):
+            expected_value += cfr(i_map, "nn", i, j, 1, 1, 1/n_possibilities)
+    return expected_value/n_possibilities
+       
 def chance_util_second(i_map, history, card_1, card_2):
     
-    #CASO SCELTA TRA 2 CARTE (AD INIZIO PARTITA I GIOCATORI HANNO RICEVUTO LA STESSA CARTA)   
+    #Case in which the players have the same card. So the possibilities are 4 (4 different types of cards left) 
     if(card_1 == card_2):
         expected_value = 0
-        n_possibilities = 2 
+        n_possibilities = 4 
         for i in range(_N_CARDS):
             if i!=card_1:
-                expected_value += cfr(i_map, history + "n", card_1, card_2, 
-                                      1, 1, 1/n_possibilities, i)
-
-        return expected_value/n_possibilities
+                expected_value += cfr(i_map, history + "n", card_1, card_2, 1, 1, 1/n_possibilities, i)
+    return expected_value/n_possibilities
    
-    ##CASO SCELTA TRA 3 CARTE (AD INIZIO PARTITA I GIOCATORI HANNO RICEVUTO CARTE DIVERSE)
+    #Case in which the players have different cards. So the possibilities are 5 (5 different types of cards left) 
     else:
         expected_value = 0
-        n_possibilities = 3
+        n_possibilities = 5
         for i in range(_N_CARDS):
-                expected_value += cfr(i_map, history + "n", card_1, card_2, 
-                                      1, 1, 1/n_possibilities, i)
-
+                expected_value += cfr(i_map, history + "n", card_1, card_2, 1, 1, 1/n_possibilities, i)
         return expected_value/n_possibilities
 
+    
 def is_terminal(history):
 
     possibilities = {"nnrf": True, "nnrrf": True, "nnrrcnrf": True, "nnrrcnrc": True, "nnrrcnrrf": True,
@@ -172,9 +164,8 @@ def is_terminal(history):
 
     return history in possibilities
 
-#METHOD TO GET THE UTILITY OF TERMINAL NODES REACHED BEFORE THE THIRD ACTION OF NATURE (len(history) < 7)
+#To get utility of terminal nodes reached before the third action of nature (len(history) < 7)
 def terminal_util_short(history, card_1, card_2):
-
 
     if history == "nncrf" or history == "nnrf": 
         # Last player folded. The current player wins.
@@ -184,8 +175,7 @@ def terminal_util_short(history, card_1, card_2):
         # Last player folded. The current player wins.
         return 3
     
-    
- #METHOD TO GET THE UTILITY OF TERMINAL NODES 
+#To get utility of terminal nodes when the third action of nature accurs (len(history) >= 7)
 def terminal_util_full(history, card_1, card_2, card_N):
 
     n = len(history)
@@ -215,79 +205,79 @@ def terminal_util_full(history, card_1, card_2, card_N):
     
     #ONLY CALLS
     if history == "nnccncc":
-          if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
-            return 1
-          elif(card_player == card_opponent): 
-            return 0
-          else:
-            return -1
+        if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
+              return 1
+        elif(card_player == card_opponent): 
+              return 0
+        else:
+              return -1
           
             
     #ONE RAISE BEFORE NATURE
     if history == "nnrcncc" or history == "nncrcncc":
-          if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
+        if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
             return 3
-          elif(card_player == card_opponent): 
+        elif(card_player == card_opponent): 
             return 0
-          else:
+        else:
             return -3
           
     #ONE RAISE AFTER NATURE OR TWO RAISES BOTH BEFORE NATURE
     if history == "nnccnrc"  or history == "nnccncrc" or history == "nnrrcncc" or history == "nncrrcncc":
-          if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
+        if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
             return 5
-          elif(card_player == card_opponent): 
+        elif(card_player == card_opponent): 
             return 0
-          else:
+        else:
             return -5
           
     #ONE RAISE AFTER NATURE AND ONE RAISE BEFORE NATURE
     if history == "nnrcnrc"   or history == "nnrcncrc"  or history == "nncrcnrc"  or history == "nncrcncrc" :
-          if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
+        if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
             return 7
-          elif(card_player == card_opponent): 
+        elif(card_player == card_opponent): 
             return 0
-          else:
+        else:
             return -7
           
     
     
     #TWO RAISES AFTER NATURE OR TWO RAISES BEFORE NATURE AND ONE AFTER
     if history == "nnccnrrc" or history == "nnccncrrc" or history == "nnrrcnrc" or history =="nnrrcncrc" or history == "nncrrcnrc" or history == "nncrrcncrc" :
-          if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
+        if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
             return 9
-          elif(card_player == card_opponent): 
-            return 0
-          else:
-            return -9
+        elif(card_player == card_opponent): 
+             return 0
+        else:
+             return -9
           
     #TWO RAISES AFTER NATURE AND ONE RAISE BEFORE NATURE
     if history == "nnrcnrrc"  or history == "nnrcncrrc" or history == "nncrcnrrc"  or history == "nncrcncrrc":
-          if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
+        if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
             return 11
-          elif(card_player == card_opponent): 
+        elif(card_player == card_opponent): 
             return 0
-          else:
+        else:
             return -11
           
     #TWO RAISES AFTER NATURE AND TWO RAISES BEFORE NATURE
     if history == "nnrrcnrrc"  or history == "nnrrcncrrc"  or history == "nncrrcnrrc"  or history == "nncrrcncrrc" :
-          if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
+        if card_player > card_opponent or (card_player == card_N and card_opponent != card_N)  : 
             return 13
-          elif(card_player == card_opponent): 
+        elif(card_player == card_opponent): 
             return 0
-          else:
+        else:
             return -13
-    
-    
-    
-    
     
 
 def card_str(card):
     if card == 0:
-        return "J"
+        return "9"
     elif card == 1:
+        return "T"
+    elif card == 2:
+        return "J"
+    elif card == 3:
         return "Q"
     return "K"
 
