@@ -165,7 +165,7 @@ class Tree:
                 child.calculate_outcome_vector(out_vector)
         return out_vector
 
-def get_grandsons(children_list,skip_nature):
+def get_grandsons(children_list,skip_nature,player):
     """Prende una lista di children e ritorna la concatenazione dei loro figli
        Salta i nodi natura e ritorna i loro rispettivi figli
     """
@@ -173,15 +173,20 @@ def get_grandsons(children_list,skip_nature):
     for child in children_list:
         grandsons=[]
         #out+=child.children
-        for grandson in child.children:
-            if(grandson.isNature()):
-                grandsons+=grandson.children
-            else:
-                grandsons.append(grandson)
+        if(child.isNature() and player==2):
+            grandsons+=get_grandsons(child.children,True,2)
+        else:
+            for grandson in child.children:
+                if(grandson.isNature() and player==1):
+                    grandsons+=grandson.children
+                elif(grandson.isNature() and player==2):
+                    grandsons+=get_grandsons(grandson.children,True,2)
+                else:
+                    grandsons.append(grandson)
         out+=grandsons
     return out
 
-def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vectors,children_infosets):
+def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vectors,children_infosets,player):
     """Usa i vettori dati(assunti lunghi uguali) e applica clustering per trovare gli information set astratti"""
 
     #Altrimenti non rileva la variabile globale
@@ -196,8 +201,8 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
 
         #magic number 0.27
         eps=0.27*len(vectors)#TODO valore
-        #clustering = KMeans(n_clusters=2).fit(vectors)
-        clustering=DBSCAN(eps=eps, min_samples=2).fit(vectors)
+        clustering = KMeans(n_clusters=2).fit(vectors)
+        #clustering=DBSCAN(eps=eps, min_samples=2).fit(vectors)
         #print(vectors)
         #clustering= OPTICS(min_samples=1,metric='manhattan').fit(vectors)
         labels=clustering.labels_
@@ -288,7 +293,7 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
 
             #Salta un livello(i figli dei figli sono del giocatore sbagliato, noi vogliamo
             # i figli dei figli dei figli, che sono di nuovo del giocatore attuale
-            grandson_list=get_grandsons(children_list,True)
+            grandson_list=get_grandsons(children_list,True,player)
 
             #Filtra i terminali
             grandson_list=[grandson for grandson in grandson_list if not grandson.isTerminal()]
@@ -296,9 +301,9 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
             #print(grandson_list)
             #print("--------------------------------")
 
-            gen_infoset_clusters(actions,infoset_of,fake_infosets,fake_id_of,grandson_list)
+            gen_infoset_clusters(actions,infoset_of,fake_infosets,fake_id_of,grandson_list,player)
 
-def gen_infoset_clusters(actions,infoset_of,fake_infosets,fake_id_of,children):
+def gen_infoset_clusters(actions,infoset_of,fake_infosets,fake_id_of,children,player):
     """ Prende in input gli information set astratti e reali e una lista di children, e cerca di fare clustering quando
         Si trova una corrispondenza nelle strutture"""
     if(len(children)==0):
@@ -345,7 +350,7 @@ def gen_infoset_clusters(actions,infoset_of,fake_infosets,fake_id_of,children):
     #Per ogni gruppo di vettori fai clustering
     for size,vectors in outcome_matrix.items():
         #print(vectors)
-        cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,relevant_matrix[size],vectors,relevant_infosets_matrix[size])
+        cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,relevant_matrix[size],vectors,relevant_infosets_matrix[size],player)
 
 
 
@@ -497,8 +502,8 @@ def parse_and_abstract(filename,gen_diag):
     fake_id_of={}
 
     #Crea i cluster e astrae il gioco, riempiendo le variabili relative all'astrazione
-    gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,tree.children)
-    gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,get_grandsons(tree.children,False))
+    gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,tree.children,1)
+    gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,get_grandsons(tree.children,False,0),2)
 
 
     root_abstract_infoset=Infoset("0",str(infoset_id.increment(1)))
@@ -521,7 +526,7 @@ def parse_and_abstract(filename,gen_diag):
     print("Real infoset size %d"% len(infosets))
 
     for node_id in id_dic:
-        if(node_id not in fake_id_of):
+        if(not id_dic[node_id].isTerminal() and node_id not in fake_id_of):
             print("Error, node not in abstract store")
             node=id_dic[node_id]
             print(node.line)

@@ -18,19 +18,20 @@ class Context:
         #print(self.cumulative_regret)
 
 def gen_strats():
-    tree,id_dic,infosets,_,_,fake_infosets,fake_id_of=parse_and_abstract("testinput2.txt",False)
-    n_iterations = 20
+    tree,id_dic,infosets,_,_,fake_infosets,fake_id_of=parse_and_abstract("testinput.txt",False)
+    start_time=time.time()
+    n_iterations = 50000
     expected_game_value = 0
     context=Context(fake_infosets,fake_id_of,id_dic)
 
     context.init_matrices(True)
     prepare_strategy(fake_infosets,id_dic)
     for i in range(0,n_iterations):
-        context.init_matrices(False)
+        #context.init_matrices(False)
         player=0
         #val=apply_cfr(fake_id_of["0"],i,fake_infosets,fake_id_of,id_dic,player,[1,1])
         val1=cfr2(tree,0,i,1,1,context)
-        print("\n----------Moving to player 2-------\n")
+        #print("\n----------Moving to player 2-------\n")
         val2=cfr2(tree,1,i,1,1,context)
         print("Result of iteration %d is %d %d" %(i,val1,val2))
 
@@ -41,9 +42,10 @@ def gen_strats():
             #print(infoset.strategy)
     print("Final Strategy:")
     for infoset in fake_infosets:
-        print(infoset.strategy)
+        print("%s : %s"%(infoset.info_string,infoset.strategy))
     print("Generating diagram")
     apply_edges_to_diagram(tree,infosets,fake_infosets,id_dic,fake_id_of)
+    print("--- Solving took %s seconds ---" % (time.time() - start_time))
 
 def prepare_strategy(infosets,id_dic):
     for infoset,nodes in infosets.items():
