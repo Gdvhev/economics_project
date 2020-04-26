@@ -63,7 +63,7 @@ class Tree:
     def isNature(self):
         return self.line[2]=="chance"
 
-    def build_dot(self,dot,father_id,level):
+    def build_dot(self,dot,father_id,level,id_dic,fake_id_of):
         """ Riempe l'oggetto dot per la parte grafica"""
         #Decommentare per limitare la dimensione dell'output grafico
         #if(level>5):
@@ -82,11 +82,14 @@ class Tree:
         dot.node(self.node_id,label)
 
         #Crea il link al padre grafico
-        dot.edge(father_id, self.node_id,label=(self.action_label+self.action_infoset_label))
+        edge_label=(self.action_label+self.action_infoset_label)+" p="
+        if(father_id in fake_id_of and self.action_label in fake_id_of[father_id].strategy):
+            edge_label+=str(fake_id_of[father_id].strategy[self.action_label])
+        dot.edge(father_id, self.node_id,label=edge_label)
 
         #Ripeti sui figli
         for child in self.children:
-            child.build_dot(dot,self.node_id,level+1)
+            child.build_dot(dot,self.node_id,level+1,id_dic,fake_id_of)
 
     def fill_infoset_dictionary(self,dict,id_dic,father_infoset):
         """ Riempie il dizionario degli infoset"""
@@ -193,8 +196,8 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
 
         #magic number 0.27
         eps=0.27*len(vectors)#TODO valore
-        clustering = KMeans(n_clusters=2).fit(vectors)
-        #clustering=DBSCAN(eps=eps, min_samples=2).fit(vectors)
+        #clustering = KMeans(n_clusters=2).fit(vectors)
+        clustering=DBSCAN(eps=eps, min_samples=2).fit(vectors)
         #print(vectors)
         #clustering= OPTICS(min_samples=1,metric='manhattan').fit(vectors)
         labels=clustering.labels_
@@ -446,7 +449,7 @@ def add_abstracted_actions(infosets,id_dic):
         for child in champion.children:
             infoset.actions.add(child.action_label)
 
-def parse_and_abstract(filename):
+def parse_and_abstract(filename,gen_diag):
     start_time = time.time()
     (data_ordered, data_info) =read(filename)
 
@@ -469,9 +472,6 @@ def parse_and_abstract(filename):
     id_dic={}
     tree.fill_infoset_dictionary(infosets,id_dic,Infoset("0","0"))
 
-    #Inizializza il grafico, svg è l'unico che permette di usare gli input grandi
-    dot = Graph(comment='My game',format='svg')
-    tree.build_dot(dot,"Begin",0);
 
     #Vecchia sequence table non più usata, lasciata per sicurezza
     #sequence_table={}
@@ -513,7 +513,30 @@ def parse_and_abstract(filename):
     # thread1.start()
     # thread1.join()
     # thread1.join()
+    add_abstracted_actions(fake_infosets,id_dic)
+    print(infosets)
+    print("---------------------")
+    print(fake_infosets)
+    print("Fake infoset size %d"% len(fake_infosets))
+    print("Real infoset size %d"% len(infosets))
 
+    for node_id in id_dic:
+        if(node_id not in fake_id_of):
+            print("Error, node not in abstract store")
+            node=id_dic[node_id]
+            print(node.line)
+            print(node.abstracted_infoset)
+            #assert(False)
+    if(gen_diag):
+        apply_edges_to_diagram(tree,infosets,fake_infosets,id_dic,fake_id_of)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    return tree,id_dic,infosets,infoset_of,infoset_id_of,fake_infosets,fake_id_of
+
+def apply_edges_to_diagram(tree,infosets,fake_infosets,id_dic,fake_id_of):
+
+    #Inizializza il grafico, svg è l'unico che permette di usare gli input grandi
+    dot = Graph(comment='My game',format='svg')
+    tree.build_dot(dot,"Begin",0,id_dic,fake_id_of);
 
     display="abstract"
     if(display=="true"):#solo infoset reali
@@ -523,17 +546,7 @@ def parse_and_abstract(filename):
     else:#clusterfuck
         add_infoset_edges(dot,infosets,fake_infosets)
 
-    print(infosets)
-    print("---------------------")
-    print(fake_infosets)
-    print("Fake infoset size %d"% len(fake_infosets))
-    print("Real infoset size %d"% len(infosets))
-
-    add_abstracted_actions(fake_infosets,id_dic)
-
     dot.render('test-output/round-table.gv', view=False)
-    print("--- %s seconds ---" % (time.time() - start_time))
-    return tree,id_dic,infosets,infoset_of,infoset_id_of,fake_infosets,fake_id_of
-
+    return 0
 if __name__ == '__main__':
-    parse_and_abstract("testinput.txt")
+    parse_and_abstract("testinput.txt",True)

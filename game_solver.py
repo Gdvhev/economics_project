@@ -15,11 +15,11 @@ class Context:
 
         if(resetRegret):
             self.R_T={infoset: {action:0 for action in infoset.actions} for infoset in self.infosets.keys()}
-        print(self.cumulative_regret)
+        #print(self.cumulative_regret)
 
-def main():
-    tree,id_dic,_,_,_,fake_infosets,fake_id_of=parse_and_abstract("testinput.txt")
-    n_iterations = 2
+def gen_strats():
+    tree,id_dic,infosets,_,_,fake_infosets,fake_id_of=parse_and_abstract("testinput2.txt",False)
+    n_iterations = 20
     expected_game_value = 0
     context=Context(fake_infosets,fake_id_of,id_dic)
 
@@ -37,8 +37,13 @@ def main():
         for infoset in fake_infosets:
             infoset.strategy=infoset.next_strategy
             infoset.next_strategy={}
-            print(infoset.info_string)
-            print(infoset.strategy)
+            #print(infoset.info_string)
+            #print(infoset.strategy)
+    print("Final Strategy:")
+    for infoset in fake_infosets:
+        print(infoset.strategy)
+    print("Generating diagram")
+    apply_edges_to_diagram(tree,infosets,fake_infosets,id_dic,fake_id_of)
 
 def prepare_strategy(infosets,id_dic):
     for infoset,nodes in infosets.items():
@@ -54,83 +59,27 @@ def prepare_strategy(infosets,id_dic):
         #Manca la natura
 
 
-# def apply_cfr(current_infoset,iteration,infosets,infoset_id_of,id_dic,player,probability_vector):
-#     print("------")
-#     print(probability_vector)
-#     nodes_ids=infosets[current_infoset]
-#     nodes_obj=[id_dic[x] for x in nodes_ids]
-#     if(len(nodes_ids)==1):
-#         if(nodes_obj[0].isTerminal()): #Not alive anymore
-#             return calc_utility(nodes_obj[0],probability)
-#
-#         if(nodes_obj[0].isNature()):
-#             member_children=nodes_obj[0].children
-#             return recur_cfr(current_infoset,iteration,infosets,infoset_id_of,id_dic,player,probability_vector,member_children,True)
-#
-#
-#     player=(player+1)%2
-#     value=0
-#     action_values=list(current_infoset.actions)
-#     print("At infoset %s player %d and probability %f"% (current_infoset.info_string,player,probability_vector[player]))
-#     print(action_values)
-#
-#     member_children=[]
-#     terminal_children=[]
-#     for member in nodes_obj:
-#         member_children+=member.children
-#
-#
-#     accum=0
-#     terminal_children=[child for child in member_children if child.isTerminal()]
-#     member_children=[child for child in member_children if not child.isTerminal()]
-#
-#     for terminal_child in terminal_children:
-#         handle_terminal(terminal_child,player)
-#
-#     accum=recur_cfr(current_infoset,iteration,infosets,infoset_id_of,id_dic,player,probability_vector,member_children,False)
-#
-#     return accum
-
-# def recur_cfr(current_infoset,iteration,infosets,infoset_id_of,id_dic,player,probability_vector,member_children,isNature):
-#     if(isNature):
-#         player=(player+1)%2
-#     children_infosets={}
-#     for child in member_children:
-#         child_infoset=infoset_id_of[child.node_id]
-#         if child_infoset not in children_infosets:
-#             children_infosets[child_infoset]=[child.action_label]
-#
-#     accum=0
-#     old_prob=probability_vector.copy()
-#     for child_infoset,actions in children_infosets.items():
-#         #probability_vector[(player+1)%2]=probability_vector[(player+1)%2]*1#TODO actually use probability
-#
-#         #TODO giusto prendere un champion??
-#         if(isNature):
-#             probability_vector=[prob*current_infoset.strategy[actions[0]] for prob in probability_vector]
-#         else:
-#             probability_vector[player]=probability_vector[player]*current_infoset.strategy[actions[0]]
-#
-#         accum+=apply_cfr(child_infoset,iteration,infosets,infoset_id_of,id_dic,player,probability_vector)
-#
-#
-#         probability_vector=old_prob.copy()
-    #
-    # return accum
-
-
 def cfr2(tree,player,iteration,p1,p2,context):
-    print("Handling %s p1=%f p2=%f" % (tree.line[1],p1,p2))
+    #print("Handling %s p1=%f p2=%f" % (tree.line[1],p1,p2))
     if(tree.isTerminal()):
         return handle_terminal(tree,player)
 
     if(tree.isNature()):
         #TODO actually handle natures
         accum=0
-        for child in tree.children:
-            accum+= cfr2(child,player,iteration,p1,p2,context)
+        #for child in tree.children:
+        #    accum+= cfr2(child,player,iteration,p1,p2,context)
+        #return accum
+
+        num_c=len(tree.children)
+        probs=tree.line[4:]
+        for i,child in enumerate(tree.children):
+            probability=float(probs[i].split("=")[1])/num_c
+            accum+= cfr2(child,player,iteration,p1*probability,p2*probability,context)
         return accum
 
+    if(tree.node_id not in context.infoset_id_of):
+        print(tree.line)
     infoset=context.infoset_id_of[tree.node_id]
     #print(tree.line[1])
     #print(infoset.info_string)
@@ -183,13 +132,13 @@ def update_strategy(infoset,context):
 
     for action in infoset.actions:
         if(regret_sum>0):
-            print("HELLOOOOO %s"%action)
+            #print("HELLOOOOO %s"%action)
             if(context.R_T[infoset][action]>0):
                 infoset.next_strategy[action]=context.R_T[infoset][action]/regret_sum
             else:
                 infoset.next_strategy[action]=0
-            print(infoset.next_strategy[action])
-            print("%d %d"%(context.cumulative_regret[infoset][action],regret_sum))
+            #print(infoset.next_strategy[action])
+            #print("%d %d"%(context.cumulative_regret[infoset][action],regret_sum))
 
         else:
             infoset.next_strategy[action]= 1.0/ len(infoset.actions)
@@ -204,4 +153,4 @@ def handle_terminal(node,player):
 
 
 if __name__ == "__main__":
-    main()
+    gen_strats()
