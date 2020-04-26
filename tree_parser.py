@@ -39,6 +39,9 @@ class Infoset:
         self.info_string=info_string
         self.id=id
         self.abstracted_infoset=""
+        self.strategy={}
+        self.next_strategy={}
+        self.actions=set()
 
 class Tree:
     """Struttura ricorsiva che rappresenta un nodo dell'albero
@@ -92,9 +95,9 @@ class Tree:
         if(not self.isTerminal()):#Terminali non hanno information set
             if(not self.isNature()):
                 player_id=self.line[3]
+                self.player_id=self.line[3]
             else:
                 player_id="N"
-
 
             if(self.infoset=="NaN"):#Se non ancora definito crealo
                 self.infoset=gen_infoset(dict,player_id)
@@ -435,6 +438,14 @@ def read(filename):
 
     return data_ordered,data_info
 
+
+def add_abstracted_actions(infosets,id_dic):
+    for infoset,children_id in infosets.items():
+        assert(len(children_id)>0)
+        champion=id_dic[children_id[0]]
+        for child in champion.children:
+            infoset.actions.add(child.action_label)
+
 def parse_and_abstract(filename):
     start_time = time.time()
     (data_ordered, data_info) =read(filename)
@@ -490,6 +501,11 @@ def parse_and_abstract(filename):
     gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,get_grandsons(tree.children,False))
 
 
+    root_abstract_infoset=Infoset("0",str(infoset_id.increment(1)))
+    fake_infosets[root_abstract_infoset]=["0"]
+    fake_id_of["0"]=root_abstract_infoset
+    tree.abstracted_infoset=root_abstract_infoset
+
     #Il multithreading funziona ma per qualche motivo rallenta
     # thread1=threading.Thread(target=gen_infoset_clusters, args=(actions,infoset_id_of,fake_infosets,fake_id_of,tree.children))
     # thread2=threading.Thread(target=gen_infoset_clusters, args=(actions,infoset_id_of,fake_infosets,fake_id_of,get_grandsons(tree.children)))
@@ -513,7 +529,7 @@ def parse_and_abstract(filename):
     print("Fake infoset size %d"% len(fake_infosets))
     print("Real infoset size %d"% len(infosets))
 
-
+    add_abstracted_actions(fake_infosets,id_dic)
 
     dot.render('test-output/round-table.gv', view=False)
     print("--- %s seconds ---" % (time.time() - start_time))
