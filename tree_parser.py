@@ -201,8 +201,8 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
 
         #magic number 0.27
         eps=0.27*len(vectors)#TODO valore
-        clustering = KMeans(n_clusters=2).fit(vectors)
-        #clustering=DBSCAN(eps=eps, min_samples=2).fit(vectors)
+        #clustering = KMeans(n_clusters=2).fit(vectors)
+        clustering=DBSCAN(eps=eps, min_samples=2).fit(vectors)
         #print(vectors)
         #clustering= OPTICS(min_samples=1,metric='manhattan').fit(vectors)
         labels=clustering.labels_
