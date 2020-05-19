@@ -11,7 +11,10 @@ if __name__ == "__main__":
     
     
 
-#Visita in profondità i primi n nodi (con n = subgame_size) e ritorna un set di questi nodi
+#Visita in profondità i primi n nodi (con n = subgame_size) e ritorna visited che è un set di questi nodi
+#new_roots è il set di nodi da considerare come radici per i subgame seguenti
+#subgame_size è l'altezza del subgame considerato
+
 def dfs_limited(tree, visited=None, counter=0, new_roots=None):
     if visited = None:
         visited = set()
@@ -26,6 +29,8 @@ def dfs_limited(tree, visited=None, counter=0, new_roots=None):
     return visited, new_roots
     
 
+#Costruisce un subgame valido costituito dai nodi apparteneti agli stessi information set dei 
+#nodi nel set visited 
 def build_subgame(visited):
     
     subgame_infosets = set()
@@ -38,7 +43,7 @@ def build_subgame(visited):
         
 return subgame
         
-
+#Dato il subgame applico cfr ai suoi nodi  
 def cfr_subgame(subgame):
     n_iterations = 20000
     for tree in subgame:
@@ -47,8 +52,8 @@ def cfr_subgame(subgame):
     #bisogna fare back map?
         
         
-        
-def resolver(tree, subgame_size = 3, limit = 9):
+#Decidere valore limit e subgame size
+def resolver(tree, subgame_size = 3, limit = 10):
  
     visited, new_roots = dfs_limited(tree)
     subgame = build_subgame(visited)
