@@ -23,7 +23,7 @@ def gen_strats():
     n_iterations = 20000
     expected_game_value = 0
     context=Context(fake_infosets,fake_id_of,id_dic)
-
+   
     context.init_matrices(True)
     prepare_strategy(fake_infosets,id_dic)
     [do_iteration(tree,i,context,fake_infosets) for i in range(0,n_iterations)]
@@ -43,6 +43,8 @@ def gen_strats():
     back_map(infosets)
 
     output_strategy("strategy.txt",infosets,infoset_id_of)
+    return tree,id_dic,infosets,_,infoset_id_of,fake_infosets,fake_id_of,context2
+    
 
 def do_iteration(tree,i,context,fake_infosets):
     #context.init_matrices(False)
