@@ -16,15 +16,16 @@ if __name__ == "__main__":
 #subgame_size è l'altezza del subgame considerato
 
 def dfs_limited(tree, visited=None, counter=0, new_roots=None):
-    if visited = None:
+    if visited == None:
         visited = set()
         new_roots = set()
     visited.add(tree)
-    counter++
+    counter = counter + 1
     if counter <= subgame_size:
         for child in tree.children:
-        dfs_limited(child, visited, counter)
-    else new_roots.add(tree.children)
+            dfs_limited(child, visited, counter)
+    else:
+        new_roots.add(tree.children)
     
     return visited, new_roots
     
@@ -36,12 +37,12 @@ def build_subgame(visited):
     subgame_infosets = set()
     subgame = set()
     for tree in visited:
-        if tree.infoset not in subgame_infosets
-        subgame_infosets.add(tree.infoset)
+        if tree.infoset not in subgame_infosets:
+            subgame_infosets.add(tree.infoset)
     for infoset in subgame_infosets:
         subgame.add(infosets.get(infoset))
         
-return subgame
+    return subgame
         
 #Dato il subgame applico cfr ai suoi nodi  
 def cfr_subgame(subgame):
@@ -59,11 +60,8 @@ def resolver(tree, subgame_size = 3, limit = 10):
     subgame = build_subgame(visited)
     cfr_subgame(subgame)
     
-    for (i=subgame_size, i = i + subgame_size, i <= limit):
+    for i in range(subgame_size, limit + 1):
         for tree in new_roots:
-        visited, new_roots = dfs_limited(tree)
-        subgame = build_subgame(visited)
-        cfr_subgame(subgame)
-        
-        
-        
+            visited, new_roots = dfs_limited(tree)
+            subgame = build_subgame(visited)
+            cfr_subgame(subgame)
