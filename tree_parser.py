@@ -64,6 +64,7 @@ class Tree:
         return self.line[2]=="chance"
 
     def build_dot(self,dot,father_id,level,id_dic,fake_id_of):
+        self.father_id=father_id
         """ Riempe l'oggetto dot per la parte grafica"""
         #Decommentare per limitare la dimensione dell'output grafico
         #if(level>5):
@@ -200,7 +201,9 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
         #Dobbiamo ancora trovare quale sia l'algoritmo migliore, kMeans per ora sembra andare
 
         #magic number 0.27
-        eps=0.27*len(vectors)#TODO valore
+        #eps=0.27*len(vectors)#TODO valore
+        #eps=100
+        eps=0.0000001
         #clustering = KMeans(n_clusters=2).fit(vectors)
         clustering=DBSCAN(eps=eps, min_samples=2).fit(vectors)
         #print(vectors)
