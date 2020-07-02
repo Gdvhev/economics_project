@@ -279,22 +279,22 @@ def refine(player,tree,infosets,infoset_id_of,id_dic):
             break
         print("New Roots %d %s"%(len(roots),[x.node_id for x in roots]))
 
-def refine2(player,tree,infosets,infoset_id_of,id_dic):
+def refine2(player,tree,infosets,infoset_id_of,id_dic,n_iterations):
     limit=1
     size=100
     roots=tree.children
     print(roots[0].infoset.actions)
     print(tree.line[4:])
     print("Refining %s"%roots)
-    n_iterations=1000
-    for i in range(0, limit):#nolimits
+    val=0
+    for i in range(1, limit+1):#nolimits
         infoset_strategy_backup={info: info.strategy.copy() for info in infosets.keys()}
         subgame=calc_subgame(roots,size)
         subgame_infosets=[x.infoset for x in roots+subgame if hasattr(x,'player_id') and x.player_id==str(player)]
         #print(subgame_infosets)
         subgame,roots,new_tree,sub_infosets,sub_id_of,sub_id_dic,sub_leaves=copy_tree2(tree,infosets,id_dic,roots,subgame,player)
 
-        context=Context(sub_infosets,sub_id_of,sub_id_dic)#TODO gli argomenti
+        context=Context(sub_infosets,sub_id_of,sub_id_dic)
 
         context.init_matrices(True)
 
@@ -304,7 +304,7 @@ def refine2(player,tree,infosets,infoset_id_of,id_dic):
         print("Id of: %s"%sub_id_of)
         print()
         print("Id dic: %s"%sub_id_dic)
-        [do_iteration(new_tree,j,context,sub_infosets,subgame+roots+[new_tree],player) for j in range(0,n_iterations)]
+        val=[do_iteration(new_tree,j,context,sub_infosets,subgame+roots+[new_tree],player) for j in range(0,n_iterations)][-1]
         x=subgame+roots+[new_tree]
         print(len(x))
 
@@ -331,11 +331,16 @@ def refine2(player,tree,infosets,infoset_id_of,id_dic):
             print("Finished tree at iteration %d"%i)
             break
         print("New Roots %d %s"%(len(roots),[x.node_id for x in roots]))
-
+    return val
 
 if __name__ == "__main__":
-    tree,id_dic,infosets,infoset_id_of = gen_strats()
-    refine2(1,tree,infosets,infoset_id_of,id_dic)
-    output_strategy("strategy_refined.txt",infosets,infoset_id_of)
-    refine2(2,tree,infosets,infoset_id_of,id_dic)
-    output_strategy("strategy_refined2.txt",infosets,infoset_id_of)
+    start_time=time.time()
+    init_n=100
+    refine_n=1
+    tree,id_dic,infosets,infoset_id_of,val,fake_infosets = gen_strats("testinput3.txt",init_n)
+    val=refine2(1,tree,infosets,infoset_id_of,id_dic,refine_n)
+    output_strategy("strategy_refined.txt",infosets,infoset_id_of,val,len(infosets),len(fake_infosets))
+    val=refine2(2,tree,infosets,infoset_id_of,id_dic,refine_n)
+    output_strategy("strategy_refined2.txt",infosets,infoset_id_of,val,len(infosets),len(fake_infosets))
+    #Todo check finale(meglio string based, che le probabilità sommino a uno)
+    print("Total exec time: %s seconds"%(time.time()-start_time))

@@ -1,12 +1,14 @@
 import numpy as np
 from tree_parser import *
 from functools import reduce
-tot=0.0
+import random
+from decimal import *
 class Context:
     def __init__(self, infosets,infoset_id_of,id_dic):
         self.infosets=infosets
         self.infoset_id_of=infoset_id_of
         self.id_dic=id_dic
+        self.tot=0.0
 
     def init_matrices(self,resetRegret):
         self.cumulative_regret={infoset:{action:0.0 for action in infoset.actions} for infoset in self.infosets.keys()}
@@ -16,14 +18,14 @@ class Context:
 
         if(resetRegret):
             self.R_T={infoset: {action:0.0 for action in infoset.actions} for infoset in self.infosets.keys()}
-            tot=0.0
+            self.tot=0.0
 
     def resetRegret(self):
         self.R_T={infoset: {action:0.0 for action in infoset.actions} for infoset in self.infosets.keys()}
         #print(self.cumulative_regret)
 
-def gen_strats():
-    tree,id_dic,infosets,_,infoset_id_of,fake_infosets,fake_id_of=parse_and_abstract("testinput.txt",False)
+def gen_strats(filename,n_iterations):
+    tree,id_dic,infosets,_,infoset_id_of,fake_infosets,fake_id_of=parse_and_abstract(filename,False)
     # print("--------------------------------------------------------------_")
     # print(tree.children[0].infoset.actions)
     # print(tree.children[0].infoset.abstracted_infoset.actions)
@@ -31,7 +33,7 @@ def gen_strats():
         if(infoset.abstracted_infoset!=""):
             infoset.actions=infoset.abstracted_infoset.actions
     start_time=time.time()
-    n_iterations = 2000
+    # n_iterations = 200000
     context=Context(fake_infosets,fake_id_of,id_dic)
 
     context.init_matrices(True)
@@ -53,18 +55,16 @@ def gen_strats():
         infoset.strategy=infoset.next_strategy#disable to disable averaging
         print("%s : %s"%(infoset.info_string,infoset.next_strategy))
     print("Generating diagram")
-    apply_edges_to_diagram(tree,infosets,fake_infosets,id_dic,fake_id_of)
+    apply_edges_to_diagram(tree,infosets,fake_infosets,id_dic,fake_id_of,False)
     print("--- Solving took %s seconds ---" % (time.time() - start_time))
 
     back_map(infosets)
 
-    output_strategy("strategy.txt",infosets,infoset_id_of)
-    return tree,id_dic,infosets,infoset_id_of
+    output_strategy("strategy.txt",infosets,infoset_id_of,val,len(infosets),len(fake_infosets))
+    return tree,id_dic,infosets,infoset_id_of,val,fake_infosets
 
 
 def do_iteration(tree,i,context,fake_infosets,subgame,sub_player):
-    global tot
-
     subgame=[x.node_id for x in subgame]
     #context.init_matrices(False)
     context.resetRegret()
@@ -76,9 +76,10 @@ def do_iteration(tree,i,context,fake_infosets,subgame,sub_player):
     #print("Subgame %s"%subgame)
     sub2= subgame if sub_player==2 else []
     val2=cfr2(tree,1,i,1.0,1.0,context,sub2)
-    tot+=val1
+    context.tot+=val1
     #print(list(context.cumulative_regret.values())[0])
-    print("Result %f of iteration %d is %f %f" %(tot/(i+1),i,val1,val2))
+    average_val=context.tot/(i+1)
+    print("Result %f of iteration %d is %f %f" %(average_val,i,val1,val2))
     for infoset in fake_infosets:
         #print(infoset.strategy)
         #infoset.strategy=infoset.next_strategy.copy()
@@ -89,7 +90,7 @@ def do_iteration(tree,i,context,fake_infosets,subgame,sub_player):
         #print(infoset.info_string)
         #print(infoset.strategy)
         #print("%s : %s"%(infoset.info_string,infoset.strategy))
-    return val1
+    return average_val
 
 def prepare_strategy(infosets,id_dic):
     for infoset,nodes in infosets.items():
@@ -131,18 +132,19 @@ def cfr2(tree,player,iteration,p1,p2,context,subgame):
         return handle_terminal(tree,player)
 
     if(tree.isNature()):
-        #TODO actually handle natures
         accum=0.0
-        #for child in tree.children:
-        #    accum+= cfr2(child,player,iteration,p1,p2,context)
-        #return accum
-
         num_c=len(tree.children)
         probs=tree.line[4:]
         prob_func=lambda i:float(probs[i].split("=")[1])/num_c
+
+        #No monte carlo
         for i,child in enumerate(tree.children):
-            probability=float(probs[i].split("=")[1])/num_c
-            accum+= cfr2(child,player,iteration,p1*probability,p2*probability,context,subgame)
+           probability=float(probs[i].split("=")[1])/num_c
+           accum+= probability*cfr2(child,player,iteration,p1*probability,p2*probability,context,subgame)
+        #
+        #Monte carlo
+        # selected=random.randint(0,len(tree.children)-1)
+        # accum+=cfr2(tree.children[selected],player,iteration,p1,p2,context,subgame)
         return accum
 
     if(tree.node_id not in context.infoset_id_of):
@@ -233,8 +235,37 @@ def clean_strategy(infoset,context,cutoff):
         infoset.next_strategy[action]=round(infoset.next_strategy[action], cutoff)
         acc+=infoset.next_strategy[action]
 
+    acc=round(acc,cutoff)
     if(acc!=1.0):
-        print("Warning, non 1-sum probability vector %d :%s"%(acc,infoset.next_strategy))
+        print("Warning, non 1-sum probability vector %f :%s"%(acc,infoset.next_strategy))
+        diff=round(1.0-acc,cutoff)
+        if diff>0:#Missing probability
+            for action in infoset.actions:
+                if infoset.next_strategy[action]+diff<=1.0:
+                    infoset.next_strategy[action]=round(infoset.next_strategy[action]+diff,cutoff)
+                    diff=0.0
+                    break
+                else:
+                    diff-=(1.0-infoset.next_strategy[action])
+                    assert(diff>=0)
+                    infoset.next_strategy[action]=1.0
+        else:#Eccess probability
+            diff=-diff
+            for action in infoset.actions:
+                if infoset.next_strategy[action]-diff>=0.0:
+                    infoset.next_strategy[action]=round(infoset.next_strategy[action]-diff,cutoff)
+                    diff=0.0
+                    break
+                else:
+                    diff-=infoset.next_strategy[action]
+                    assert(diff>=0)
+                    infoset.next_strategy[action]=0.0
+        acc=0.0
+        for action in infoset.actions:
+            acc+=infoset.next_strategy[action]
+        print("Corrected to %f :%s"%(acc,infoset.next_strategy))
+        acc=round(acc,cutoff)
+        assert(acc==1.0)
 
 
 def handle_terminal(node,player):
@@ -250,10 +281,11 @@ def back_map(infosets):
         if(infoset.abstracted_infoset!=""):
             infoset.strategy=infoset.abstracted_infoset.strategy
 
-def output_strategy(filename,infosets,infoset_id_of):
+def output_strategy(filename,infosets,infoset_id_of,val,infon,fakeinfon):
     f = open(filename,"w")
     #del infosets[infoset_id_of["0"]]
     f.write("#Autogenerated strategy for the Franzini,Gianotti,Lundardon,Disarò group of the ec course\n")
+    f.write("#%f, Infosets original %d, abstracted %d\n"%(val,infon,fakeinfon))
     #print(infosets)
     for infoset in infosets:
         actions_string=""
@@ -265,4 +297,4 @@ def output_strategy(filename,infosets,infoset_id_of):
         f.write("infoset %s strategies %s\n"%(infoset.info_string,actions_string))
 
 if __name__ == "__main__":
-    gen_strats()
+    gen_strats("testinput.txt",1000)

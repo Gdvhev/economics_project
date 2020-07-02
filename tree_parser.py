@@ -63,34 +63,34 @@ class Tree:
     def isNature(self):
         return self.line[2]=="chance"
 
-    def build_dot(self,dot,father_id,level,id_dic,fake_id_of):
+    def build_dot(self,dot,father_id,level,id_dic,fake_id_of,really):
         self.father_id=father_id
         """ Riempe l'oggetto dot per la parte grafica"""
         #Decommentare per limitare la dimensione dell'output grafico
         #if(level>5):
         #    return
+        if really:
+            label=self.node_id
+            if(self.isNature()):
+                label=label+" Nature\n "+str(self.line[4:])
+            elif(self.isTerminal()):
+                label=label+" Terminal\n trace: "+self.line[1]+"\n "+str(self.line[3:])
+            else: #Player node
+                player_id="Player "+self.line[3]
+                label=label+" infoset:"+self.infoset.info_string+" "+self.infoset.id+ " "+player_id+"\n "+self.line[1]+"\n "+str(self.line[4:])
 
-        label=self.node_id
-        if(self.isNature()):
-            label=label+" Nature\n "+str(self.line[4:])
-        elif(self.isTerminal()):
-            label=label+" Terminal\n trace: "+self.line[1]+"\n "+str(self.line[3:])
-        else: #Player node
-            player_id="Player "+self.line[3]
-            label=label+" infoset:"+self.infoset.info_string+" "+self.infoset.id+ " "+player_id+"\n "+self.line[1]+"\n "+str(self.line[4:])
+            #Crea un nodo grafico
+            dot.node(self.node_id,label)
 
-        #Crea un nodo grafico
-        dot.node(self.node_id,label)
-
-        #Crea il link al padre grafico
-        edge_label=(self.action_label+self.action_infoset_label)+" p="
-        if(father_id in fake_id_of and self.action_label in fake_id_of[father_id].strategy):
-            edge_label+=str(fake_id_of[father_id].strategy[self.action_label])
-        dot.edge(father_id, self.node_id,label=edge_label)
+            #Crea il link al padre grafico
+            edge_label=(self.action_label+self.action_infoset_label)+" p="
+            if(father_id in fake_id_of and self.action_label in fake_id_of[father_id].strategy):
+                edge_label+=str(fake_id_of[father_id].strategy[self.action_label])
+            dot.edge(father_id, self.node_id,label=edge_label)
 
         #Ripeti sui figli
         for child in self.children:
-            child.build_dot(dot,self.node_id,level+1,id_dic,fake_id_of)
+            child.build_dot(dot,self.node_id,level+1,id_dic,fake_id_of,really)
 
     def fill_infoset_dictionary(self,dict,id_dic,father_infoset):
         """ Riempie il dizionario degli infoset"""
@@ -104,8 +104,9 @@ class Tree:
                 player_id="N"
 
             if(self.infoset=="NaN"):#Se non ancora definito crealo
-                self.infoset=gen_infoset(dict,player_id)
-                dict[self.infoset]=[self.node_id]
+                    self.infoset=gen_infoset(dict,player_id)
+                    if not self.isNature():#TODO controlla che non servissero a qualcosa gli infoset dei natura(no errore promette bene)
+                        dict[self.infoset]=[self.node_id]
             elif(self.infoset in dict):#Se definito in precedenza aggiungi alla lista questo nodo
                 dict[self.infoset].append(self.node_id)
             else:#Se non definito in precedenza crea la lista con solo questo nodo
@@ -203,19 +204,19 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
         #magic number 0.27
         #eps=0.27*len(vectors)#TODO valore
         #eps=100
-        eps=0.0000001
-        #clustering = KMeans(n_clusters=2).fit(vectors)
+        eps=1
+        # clustering = KMeans(n_clusters=2).fit(vectors)
         clustering=DBSCAN(eps=eps, min_samples=2).fit(vectors)
         #print(vectors)
         #clustering= OPTICS(min_samples=1,metric='manhattan').fit(vectors)
         labels=clustering.labels_
+        labels=[-1]*len(vectors)#TODO stacca astrazione
 
     #print("Cluster targets: %s" %labels)
 
     #info_store contiene gli abstracted information set eventualmente creati
     fake_info_store={}
-    outlier_counter=-2
-
+    outlier_counter=-2#Cluster veri hanno +, così no collisioni
     #Per ogni vettore(information set reale)
     for index,obj in enumerate(labels):
         if(obj==-1):#Se outlier allora creiamo un cluster finto
@@ -527,25 +528,37 @@ def parse_and_abstract(filename,gen_diag):
     print(fake_infosets)
     print("Fake infoset size %d"% len(fake_infosets))
     print("Real infoset size %d"% len(infosets))
-
+    nature_count=1
     for node_id in id_dic:
         if(not id_dic[node_id].isTerminal() and node_id not in fake_id_of):
-            print("Error, node not in abstract store")
-            node=id_dic[node_id]
-            print(node.line)
-            print(node.abstracted_infoset)
+            if id_dic[node_id].isNature():
+                nature_count+=1
+            else:
+                print("Error, node not in abstract store")#Ma i chance ci vanno?
+                node=id_dic[node_id]
+                print(node.line)
+                print(node.abstracted_infoset)
+                assert(False)
             #assert(False)
+            #
+    print("Chance Nodes %d"%(nature_count))
+    for infoset in infosets.keys():
+        if not (infoset.id==0 or infoset.info_string[0]=="N") and infoset.abstracted_infoset=="":
+            print("Error Missing infoset %s %s"%(infoset.id,infoset.info_string))
+            assert(False)
+
     if(gen_diag):
-        apply_edges_to_diagram(tree,infosets,fake_infosets,id_dic,fake_id_of)
+        apply_edges_to_diagram(tree,infosets,fake_infosets,id_dic,fake_id_of,True)
     print("--- %s seconds ---" % (time.time() - start_time))
     return tree,id_dic,infosets,infoset_of,infoset_id_of,fake_infosets,fake_id_of
 
-def apply_edges_to_diagram(tree,infosets,fake_infosets,id_dic,fake_id_of):
+def apply_edges_to_diagram(tree,infosets,fake_infosets,id_dic,fake_id_of,really):
 
     #Inizializza il grafico, svg è l'unico che permette di usare gli input grandi
     dot = Graph(comment='My game',format='svg')
-    tree.build_dot(dot,"Begin",0,id_dic,fake_id_of);
-
+    tree.build_dot(dot,"Begin",0,id_dic,fake_id_of,really);
+    if not really:
+        return 0
     display="abstract"
     if(display=="true"):#solo infoset reali
         add_infoset_edges(dot,infosets,{})
