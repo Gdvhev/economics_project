@@ -335,12 +335,12 @@ def refine2(player,tree,infosets,infoset_id_of,id_dic,n_iterations):
 
 if __name__ == "__main__":
     start_time=time.time()
-    init_n=100
+    init_n=10000
     refine_n=1
-    tree,id_dic,infosets,infoset_id_of,val,fake_infosets = gen_strats("testinput3.txt",init_n)
+    tree,id_dic,infosets,infoset_id_of,val,fake_infosets = gen_strats("Leduc_A.txt",init_n)
     val=refine2(1,tree,infosets,infoset_id_of,id_dic,refine_n)
-    output_strategy("strategy_refined.txt",infosets,infoset_id_of,val,len(infosets),len(fake_infosets))
+    output_strategy("strategy_refined.txt",infosets,infoset_id_of,id_dic,val,len(infosets),len(fake_infosets))
     val=refine2(2,tree,infosets,infoset_id_of,id_dic,refine_n)
-    output_strategy("strategy_refined2.txt",infosets,infoset_id_of,val,len(infosets),len(fake_infosets))
+    output_strategy("strategy_refined2.txt",infosets,infoset_id_of,id_dic,val,len(infosets),len(fake_infosets))
     #Todo check finale(meglio string based, che le probabilità sommino a uno)
     print("Total exec time: %s seconds"%(time.time()-start_time))
