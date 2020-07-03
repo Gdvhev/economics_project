@@ -228,9 +228,9 @@ def copy_tree2(original_root,original_infosets,original_id_dic,subgame_roots,sub
         id_of[x.node_id]=x.infoset
 
         x.children=copy_sub(x,original_infosets,infosets,id_of,id_dic)
-
+    subgame_ids=[y.node_id for y in subgame]
     for x in subgame+subgame_roots:
-        if(len(x.children)>0 and x.children[0].node_id not in [y.node_id for y in subgame]):
+        if(len(x.children)>0 and x.children[0].node_id not in subgame_ids):
             sub_leaf_children+=x.children
             sub_leaf.append(x)
     return subgame,subgame_roots,root,infosets,id_of,id_dic,sub_leaf
@@ -335,12 +335,12 @@ def refine2(player,tree,infosets,infoset_id_of,id_dic,n_iterations):
 
 if __name__ == "__main__":
     start_time=time.time()
-    init_n=10000
+    init_n=1000
     refine_n=1
     tree,id_dic,infosets,infoset_id_of,val,fake_infosets = gen_strats("Leduc_A.txt",init_n)
-    val=refine2(1,tree,infosets,infoset_id_of,id_dic,refine_n)
-    output_strategy("strategy_refined.txt",infosets,infoset_id_of,id_dic,val,len(infosets),len(fake_infosets))
-    val=refine2(2,tree,infosets,infoset_id_of,id_dic,refine_n)
-    output_strategy("strategy_refined2.txt",infosets,infoset_id_of,id_dic,val,len(infosets),len(fake_infosets))
+    # val=refine2(1,tree,infosets,infoset_id_of,id_dic,refine_n)
+    # output_strategy("strategy_refined.txt",infosets,infoset_id_of,id_dic,val,len(infosets),len(fake_infosets))
+    # val=refine2(2,tree,infosets,infoset_id_of,id_dic,refine_n)
+    # output_strategy("strategy_refined2.txt",infosets,infoset_id_of,id_dic,val,len(infosets),len(fake_infosets))
     #Todo check finale(meglio string based, che le probabilità sommino a uno)
     print("Total exec time: %s seconds"%(time.time()-start_time))

@@ -236,12 +236,17 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
             #eps=100
             eps=0.0000000000001
             clusters=len(vectors)-1
-            if(clusters>1 and to_remove>1):
-                clusters-=1
-            if(clusters>1 and to_remove>2):
-                clusters-=1
-            if(to_remove>3):
-                clusters=1
+            if(player==1):
+                approx=26
+            else:
+                approx=25
+            approx=2
+            #Leduc B 25 2 funziona; 26 per 1
+            for i in range(1,approx+1):
+                if(clusters>1 and to_remove>approx):
+                    clusters-=1
+            # if(to_remove>3):
+            #     clusters=1
             # clustering = KMeans(n_clusters=clusters).fit(vectors)
             clustering = AgglomerativeClustering(n_clusters=clusters).fit(vectors)
             # if(len(vectors)>to_remove):
@@ -250,14 +255,11 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
             #print(vectors)
             #clustering= OPTICS(min_samples=1,metric='manhattan').fit(vectors)
             labels=clustering.labels_
-            print("THIS")
-            print(to_remove)
             n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
             n_noise = list(labels).count(-1)
             to_remove-=len(vectors)-(n_clusters+n_noise)
-            print("Removed %d"%(len(vectors)-(n_clusters+n_noise)))
+            # print("Removed %d"%(len(vectors)-(n_clusters+n_noise)))
             assert(len(vectors)-(n_clusters+n_noise) >0)
-            print(to_remove)
             # input("A")
 
         else:
@@ -559,14 +561,16 @@ def parse_and_abstract(filename,gen_diag):
     fake_infosets={}
     fake_id_of={}
 
-    to_remove1=195
+    to_remove1=0
     to_remove2=0
     #Crea i cluster e astrae il gioco, riempiendo le variabili relative all'astrazione
     left=gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,tree.children,1,to_remove1)
-    gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,get_grandsons(tree.children,False,0),2,to_remove2)
+    left2=gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,get_grandsons(tree.children,False,0),2,to_remove2)
 
     print("There are %d unremoved infosets(%d total)"%(left,len(fake_infosets)))
+    print("There are %d unremoved infosets2(%d total)"%(left2,len(fake_infosets)))
     assert(left==0)
+    assert(left2==0)
 
     root_abstract_infoset=Infoset("0",str(infoset_id.increment(1)))
     fake_infosets[root_abstract_infoset]=["0"]

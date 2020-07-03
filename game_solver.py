@@ -3,8 +3,12 @@ from tree_parser import *
 from functools import reduce
 import random
 from decimal import *
+from threading import Thread, Lock
+#from concurrent.futures import ThreadPoolExecutor,ProcessPoolExecutor
+# from pathos.multiprocessing import ProcessingPool as Pool
 class Context:
     def __init__(self, infosets,infoset_id_of,id_dic):
+        self.mutex=Lock()
         self.infosets=infosets
         self.infoset_id_of=infoset_id_of
         self.id_dic=id_dic
@@ -32,6 +36,7 @@ def gen_strats(filename,n_iterations):
     for infoset in infosets.keys():
         if(infoset.abstracted_infoset!=""):
             infoset.actions=infoset.abstracted_infoset.actions
+        infoset.mutex=Lock()
     start_time=time.time()
     # n_iterations = 200000
     context=Context(fake_infosets,fake_id_of,id_dic)
@@ -138,7 +143,7 @@ def cfr2(tree,player,iteration,p1,p2,context,subgame):
         probs=tree.line[4:]
         prob_func=lambda i:float(probs[i].split("=")[1])/num_c
 
-        #No monte carlo
+        #No Monte carlo
         for i,child in enumerate(tree.children):
            probability=float(probs[i].split("=")[1])/num_c
            accum+= probability*cfr2(child,player,iteration,p1*probability,p2*probability,context,subgame)
@@ -168,15 +173,15 @@ def cfr2(tree,player,iteration,p1,p2,context,subgame):
     for child in tree.children:
         action=child.action_label
         if(tree.player_id=="1"):
-            if(not action in infoset.strategy):
-                print("Error %s %s %s"%(child.node_id,infoset.strategy,tree.node_id))
-            new_p1=p1*infoset.strategy[action]
+            # if(not action in infoset.strategy):
+            #     print("Error %s %s %s"%(child.node_id,infoset.strategy,tree.node_id))
+            new_p1=p1*infoset.strategy[action]#exc infoset
             value_actions[action]=cfr2(child , player,iteration, new_p1,p2,context,subgame)
         else:
-            new_p2=p2*infoset.strategy[action]
+            new_p2=p2*infoset.strategy[action]#exc infoset
             value_actions[action]=cfr2(child , player,iteration, p1,new_p2,context,subgame)
 
-        value+=infoset.strategy[action]*value_actions[action]
+        value+=infoset.strategy[action]*value_actions[action]#exc infoset
 
 
     if((tree.player_id=="1" and player==0) or (tree.player_id=="2" and player==1)):
@@ -188,32 +193,28 @@ def cfr2(tree,player,iteration,p1,p2,context,subgame):
             p_mine=p2
             p_other=p1
 
-        for action in infoset.actions:
+        for action in infoset.actions:#exc context
             context.cumulative_regret[infoset][action]+=p_other*(value_actions[action]-value)
 
             context.cumulative_strategy[infoset][action] +=p_mine*infoset.strategy[action]
 
-        update_strategy(infoset,context)
+        update_strategy(infoset,context)#exc infoset e context
     return value
 
 def update_strategy(infoset,context):
     cumulative_regret=context.cumulative_regret[infoset]
     context.R_T[infoset]={action: v+cumulative_regret[action] for action,v in context.R_T[infoset].items()}
-
     rt=context.R_T[infoset]
     regret_sum=reduce(lambda x, a :x + (rt[a] if rt[a]>0 else 0.0), rt, 0.0)
+    if(regret_sum<=0):
+        l=len(infoset.actions)
+        infoset.next_strategy={a:1.0/ l for a in infoset.actions}
+        return
     for action in infoset.actions:
-        if(regret_sum>0):
-            #print("HELLOOOOO %s"%action)
-            if(context.R_T[infoset][action]>0):
-                infoset.next_strategy[action]=context.R_T[infoset][action]/regret_sum
-            else:
-                infoset.next_strategy[action]=0.0
-            #print(infoset.next_strategy[action])
-            #print("%d %d"%(context.cumulative_regret[infoset][action],regret_sum))
-
+        if(rt[action]>0):
+            infoset.next_strategy[action]=rt[action]/regret_sum
         else:
-            infoset.next_strategy[action]= 1.0/ len(infoset.actions)
+            infoset.next_strategy[action]=0.0
 
     #print("CHIAMATO------------------------------------------------%s"%infoset.next_strategy)
 
