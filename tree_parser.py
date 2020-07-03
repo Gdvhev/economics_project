@@ -224,12 +224,10 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
     #Altrimenti non rileva la variabile globale
     global infoset_id
     if(len(vectors)==0):
-        assert(to_remove==0)
-        return
+        return to_remove
     if(len(vectors)==1):#Se ho solo un vettore è ovviamente in cluster da solo
         #print("Skipping %s as lone vector"%vectors)
         labels=[0]
-        assert(to_remove==0)
     else:
         #Dobbiamo ancora trovare quale sia l'algoritmo migliore, kMeans per ora sembra andare
         if to_remove>0 and len(vectors)>1:
@@ -238,6 +236,12 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
             #eps=100
             eps=0.0000000000001
             clusters=len(vectors)-1
+            if(clusters>1 and to_remove>1):
+                clusters-=1
+            if(clusters>1 and to_remove>2):
+                clusters-=1
+            if(to_remove>3):
+                clusters=1
             # clustering = KMeans(n_clusters=clusters).fit(vectors)
             clustering = AgglomerativeClustering(n_clusters=clusters).fit(vectors)
             # if(len(vectors)>to_remove):
@@ -334,33 +338,13 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
     #print("----------------------------------")
 
 
-    step,bonus=calc_step(to_remove,len(children_store.items()))
-
     #Per ogni partizione in children_store
     for _,store in children_store.items():
         # print()
-        to_remove,val,bonus=calc_remove(to_remove,step,bonus)
-        if(val==0):
-            remove=0
-            step2=0
-            bonus2=0
-        else:
-            step2,bonus2=calc_step(val,len(store.items()))
-
-
         for action,children_list in store.items():
-            assert(val>=0)
-            val,remove,bonus2=calc_remove(val,step2,bonus2)
             #print(action)
             #print(children_list)
-            # if(backup==20):
-            #     print("BACK")
-            #     print(to_remove)
-            #     print(step)
-            #     print(step2)
-            #     print(remove)
-            #     print(val)
-            #     input("A")
+
             #Salta un livello(i figli dei figli sono del giocatore sbagliato, noi vogliamo
             # i figli dei figli dei figli, che sono di nuovo del giocatore attuale
             grandson_list=get_grandsons(children_list,True,player)
@@ -370,26 +354,8 @@ def cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,children,vecto
 
             #print(grandson_list)
             #print("--------------------------------")
-            if(len(grandson_list)==0):
-                assert(bonus2==0)
-                if(remove<=val):
-                    bonus2=remove
-                else:
-                    bonus2=val
-                val+=remove
-                remove=0
-            left=gen_infoset_clusters(actions,infoset_of,fake_infosets,fake_id_of,grandson_list,player,remove)
-            if(left>0):
-                val+=left
-                bonus2=left
-                if(bonus2+step>val):
-                    bonus2=val-step
-
-        if(val>=0):
-            bonus=val
-            to_remove+=val
-            if(bonus+step>to_remove):
-                bonus=to_remove-step
+            left=gen_infoset_clusters(actions,infoset_of,fake_infosets,fake_id_of,grandson_list,player,to_remove)
+            to_remove=left
 
     # assert(to_remove==0)
     return to_remove
@@ -398,8 +364,7 @@ def gen_infoset_clusters(actions,infoset_of,fake_infosets,fake_id_of,children,pl
     """ Prende in input gli information set astratti e reali e una lista di children, e cerca di fare clustering quando
         Si trova una corrispondenza nelle strutture"""
     if(len(children)==0):
-        assert(to_remove==0)
-        return 0
+        return to_remove
     children_infosets=[]
     #print("----------Children is----------")
     #print(children)
@@ -440,26 +405,10 @@ def gen_infoset_clusters(actions,infoset_of,fake_infosets,fake_id_of,children,pl
 
 
     #Per ogni gruppo di vettori fai clustering
-    able_count=len([v for s,v in outcome_matrix.items() if len(v)>1])
-    step,bonus=calc_step(to_remove,able_count)
     for size,vectors in outcome_matrix.items():
         #print(vectors)
-        to_remove,remove,bonus=calc_remove(to_remove,step,bonus)
-        if(len(vectors)==1):
-            assert(bonus==0)
-            bonus=remove
-            if(bonus>to_remove):
-                bonus=to_remove
-            to_remove+=remove
-            remove=0
-
-        left=cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,relevant_matrix[size],vectors,relevant_infosets_matrix[size],player,remove)
-        if(left>0):
-            # assert(False)
-            bonus=left
-            to_remove+=left
-            if(bonus+step>to_remove):
-                bonus=to_remove-step
+        left=cluster_and_recur(actions,infoset_of,fake_infosets,fake_id_of,relevant_matrix[size],vectors,relevant_infosets_matrix[size],player,to_remove)
+        to_remove=left
 
     return to_remove
 
@@ -610,13 +559,14 @@ def parse_and_abstract(filename,gen_diag):
     fake_infosets={}
     fake_id_of={}
 
-    to_remove1=20
+    to_remove1=195
     to_remove2=0
     #Crea i cluster e astrae il gioco, riempiendo le variabili relative all'astrazione
     left=gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,tree.children,1,to_remove1)
     gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,get_grandsons(tree.children,False,0),2,to_remove2)
 
-    # assert(left==0)
+    print("There are %d unremoved infosets(%d total)"%(left,len(fake_infosets)))
+    assert(left==0)
 
     root_abstract_infoset=Infoset("0",str(infoset_id.increment(1)))
     fake_infosets[root_abstract_infoset]=["0"]
