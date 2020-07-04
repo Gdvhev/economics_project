@@ -70,17 +70,15 @@ def gen_strats(filename,n_iterations):
 
 
 def do_iteration(tree,i,context,fake_infosets,subgame,sub_player):
-    subgame=[x.node_id for x in subgame]
     #context.init_matrices(False)
     context.resetRegret()
     #val=apply_cfr(fake_id_of["0"],i,fake_infosets,fake_id_of,id_dic,player,[1,1])
-    sub1=subgame if sub_player==1 else []
+    sub1=True if sub_player==1 else []
     val1=cfr2(tree,0,i,1.0,1.0,context,sub1)
-
     #print("\n----------Moving to player 2-------\n")
     #
     #print("Subgame %s"%subgame)
-    sub2= subgame if sub_player==2 else []
+    sub2= True if sub_player==2 else []
     val2=cfr2(tree,1,i,1.0,1.0,context,sub2)
     context.tot+=val1
     #print(list(context.cumulative_regret.values())[0])
@@ -120,8 +118,8 @@ def calc_expected(tree,player):
         probs=tree.line[4:]
         prob_func=lambda i:float(probs[i].split("=")[1])/num_c
         for i,child in enumerate(tree.children):
-            probability=float(probs[i].split("=")[1])/num_c
-            accum+= calc_expected(tree,player)
+            probability=prob_func(i)
+            accum+= probability*calc_expected(child,player)
         return accum
     else:
         accum=0.0
@@ -130,7 +128,11 @@ def calc_expected(tree,player):
         return accum
 
 def cfr2(tree,player,iteration,p1,p2,context,subgame):
-    if(len(subgame)>0 and tree.node_id not in subgame):
+    if(subgame and not hasattr(tree, 'marked')):
+        # print(tree.line)
+        # print(tree in subgame)
+        # print(len(subgame))
+        # 1/0
         #print("Skipping %s %s"%(tree,tree.node_id))
         return calc_expected(tree,player)
     #print("Handling %s p1=%f p2=%f" % (tree.line[1],p1,p2))
