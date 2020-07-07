@@ -561,8 +561,8 @@ def parse_and_abstract(filename,gen_diag):
     fake_infosets={}
     fake_id_of={}
 
-    to_remove1=0
-    to_remove2=0
+    to_remove1=1794
+    to_remove2=1794
     #Crea i cluster e astrae il gioco, riempiendo le variabili relative all'astrazione
     left=gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,tree.children,1,to_remove1)
     left2=gen_infoset_clusters(actions,infoset_id_of,fake_infosets,fake_id_of,get_grandsons(tree.children,False,0),2,to_remove2)

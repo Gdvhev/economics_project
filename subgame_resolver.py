@@ -241,7 +241,7 @@ def copy_tree2(original_root,original_infosets,original_id_dic,subgame_roots,sub
 
 def refine2(player,tree,infosets,infoset_id_of,id_dic,n_iterations):
     limit=1
-    size=100
+    size=4
     roots=tree.children
     print(roots[0].infoset.actions)
     print(tree.line[4:])
@@ -300,8 +300,8 @@ def refine2(player,tree,infosets,infoset_id_of,id_dic,n_iterations):
 
 if __name__ == "__main__":
     start_time=time.time()
-    init_n=2
-    refine_n=2
+    init_n=10000
+    refine_n=1000
     tree,id_dic,infosets,infoset_id_of,val,fake_infosets = gen_strats("Leduc_C.txt",init_n)
     val=refine2(1,tree,infosets,infoset_id_of,id_dic,refine_n)
     output_strategy("strategy_refined.txt",infosets,infoset_id_of,id_dic,val,len(infosets),len(fake_infosets))
